@@ -41,8 +41,5 @@ jobs:
             path: "manifests"
             pattern: "*.yaml"
             force: false
-            
-        - name: Push changes
-          uses: ad-m/github-push-action@master
-          with:
-            github_token: ${{ secrets.GITHUB_TOKEN }}
+          env:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Leave this line unchanged
