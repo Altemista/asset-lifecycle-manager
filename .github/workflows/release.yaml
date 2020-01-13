@@ -38,7 +38,7 @@ jobs:
           with: 
             author_name: GitHub Action
             message: "[action] process template"
-            path: "manifests"
+            path: "deploy/manifests"
             pattern: "*.yaml"
             force: false
           env:
