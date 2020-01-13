@@ -154,12 +154,10 @@ install() {
   parse_commandline "$@"
   install_olm
   install_altemista_operator_registry
-  if [[$_arg_with_kubeapps == "on"]]
-  then
+  if [ "$_arg_with_kubeapps" == "on" ]; then
     install_kubeapps
   fi
-  if [[$_arg_with_harbor == "on"]]
-  then
+  if [ "$_arg_with_harbor" == "on" ]; then
     install_harbor
   fi
 }
