@@ -1,0 +1,17 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ${NAMESPACE}
+---
+apiVersion: operators.coreos.com/v1alpha1
+kind: CatalogSource
+metadata:
+  name: altemista-operators
+  namespace: olm
+spec:
+  sourceType: grpc
+  image: eu.gcr.io/coealtemista/altemista-operators:latest
+  displayName: Altemista Operators
+  publisher: Altemista
+
