@@ -9,6 +9,9 @@ jobs:
         - name: Checkout code
           uses: actions/checkout@v1
 
+        - name: Helm init
+          run: helm init --client-only
+
         - name: Add KubeApps repo
           run: helm repo add bitnami https://charts.bitnami.com/bitnami
 
