@@ -3,9 +3,11 @@ name: Process template, push and release
 jobs: 
     template:
       runs-on: ubuntu-latest
-      container:
-          image: alpine/helm:2.16.1
+
       steps:
+        - name: Set up Helm
+          run: curl -LO https://git.io/get_helm.sh && chmod 700 get_helm.sh && ./get_helm.sh
+
         - name: Checkout code
           uses: actions/checkout@v1
 
@@ -40,7 +42,7 @@ jobs:
             git config --local user.name "GitHub Action"
             git add deploy/manifests/
             git commit -m "[action] process template"
-            
+
         - name: Push changes
           uses: ad-m/github-push-action@master
           with:
