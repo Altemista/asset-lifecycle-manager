@@ -1,8 +1,7 @@
 on: 
-  branches:
-    - master
-  paths-ignore:
-    - '.github/**'
+  push:
+    paths-ignore:
+      - '.github/**'
 name: Process template and push
 jobs: 
     template:
