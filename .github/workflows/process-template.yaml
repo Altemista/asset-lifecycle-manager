@@ -1,4 +1,6 @@
-on: push
+on: 
+  branches:
+    - master
 name: Process template and push
 jobs: 
     template:
