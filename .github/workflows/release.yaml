@@ -33,13 +33,26 @@ jobs:
         - name: Save all processed YAMLs to one file
           run: find temp-process/ -name '*.yaml' -exec cat {} \; > deploy/manifests/kubeapps.yaml
 
-        - name: Add and Commit new processed files
-          uses: EndBug/add-and-commit@v2
-          with: 
-            author_name: GitHub Action
-            message: "[action] process template"
-            path: "deploy/manifests"
-            pattern: "*.yaml"
-            force: false
-          env:
-            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Leave this line unchanged
+
+        - name: Commit files
+          run: |
+            git config --local user.email "action@github.com"
+            git config --local user.name "GitHub Action"
+            git add deploy/manifests/
+            git commit -m "[action] process template"
+            
+        - name: Push changes
+          uses: ad-m/github-push-action@master
+          with:
+            github_token: ${{ secrets.GITHUB_TOKEN }}
+
+        # - name: Add and Commit new processed files
+        #   uses: EndBug/add-and-commit@v2
+        #   with: 
+        #     author_name: GitHub Action
+        #     message: "[action] process template"
+        #     path: "deploy/manifests"
+        #     pattern: "*.yaml"
+        #     force: false
+        #   env:
+        #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
