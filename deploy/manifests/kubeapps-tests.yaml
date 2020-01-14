@@ -20,6 +20,7 @@ spec:
         - -c
         - curl -o /tmp/output $CHARTSVC_HOST:$CHARTSVC_PORT/v1/charts && cat /tmp/output && cat /tmp/output | grep wordpress
   restartPolicy: Never
+
 ---
 # Source: kubeapps/templates/tests/test-dashboard.yaml
 apiVersion: v1
@@ -40,6 +41,7 @@ spec:
         - -c
         - curl -o /tmp/output $DASHBOARD_HOST && cat /tmp/output && cat /tmp/output | grep 'You need to enable JavaScript to run this app'
   restartPolicy: Never
+
 ---
 # Source: kubeapps/templates/tests/test-tiller-proxy.yaml
 apiVersion: v1
@@ -64,3 +66,4 @@ spec:
         - -c
         - "curl -o /tmp/output -ik -H \"Authorization: Bearer $(cat /var/run/secrets/kubernetes.io/serviceaccount/token)\" $TILLER_PROXY_HOST:$TILLER_PROXY_PORT/v1/releases && cat /tmp/output && cat /tmp/output | grep $KUBEAPPS_RELEASE"
   restartPolicy: Never
+
