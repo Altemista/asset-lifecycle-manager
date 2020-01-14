@@ -892,7 +892,7 @@ metadata:
     release: release-name
     heritage: Tiller
 data:
-  mongodb-root-password: "QXV2UzUxcjRnMA=="
+  mongodb-root-password: "cWZyZWM0bGgyVA=="
 ---
 # Source: kubeapps/templates/mongodb-jobs-cleanup-serviceaccount.yaml
 apiVersion: v1
