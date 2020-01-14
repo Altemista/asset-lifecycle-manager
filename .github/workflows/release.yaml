@@ -1,60 +1,67 @@
-on: push
-name: Process template, push and release
-jobs: 
-    template:
-      runs-on: ubuntu-latest
+on: 
+  push:
+    tags:
+      - '*'
+name: Create new release from new TAG
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v1
 
-      steps:
-        - name: Set up Helm
-          run: curl -LO https://git.io/get_helm.sh && chmod 700 get_helm.sh && ./get_helm.sh
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: release-${{ github.ref }}
+          body: |
+            Changes in this Release
+            - First Change
+            - Second Change
+          draft: true
+          prerelease: false
 
-        - name: Checkout code
-          uses: actions/checkout@v1
+      - name: Upload aolm.yaml to release
+        uses: actions/upload-release-asset@v1.0.1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: deploy/manifests/aolm.yaml
+          asset_name: aolm.yaml
+          asset_content_type: text/plain
 
-        - name: Helm init
-          run: helm init --client-only
+      - name: Upload apprepositories.yaml to release
+        uses: actions/upload-release-asset@v1.0.1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: deploy/manifests/apprepositories.yaml
+          asset_name: apprepositories.yaml
+          asset_content_type: text/plain
 
-        - name: Add KubeApps repo
-          run: helm repo add bitnami https://charts.bitnami.com/bitnami
+      - name: Upload kubeapps-tests.yaml to release
+        uses: actions/upload-release-asset@v1.0.1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: deploy/manifests/kubeapps-tests.yaml
+          asset_name: kubeapps-tests.yaml
+          asset_content_type: text/plain
 
-        - name: Fetch and untar KubeApps Chart
-          run: helm fetch bitnami/kubeapps --untar
-
-        - name: Create temp directory (required in helm2)
-          run: mkdir temp-process
-
-        - name: Process template with Altemista values
-          run: helm template kubeapps -f deploy/templates/kubeapps-values.yaml kubeapps/ --namespace altemistahub --output-dir temp-process
-
-        - name: Move optional resources to their own file
-          run: mv temp-process/kubeapps/templates/apprepositories.yaml deploy/manifests
-
-        - name: Move tests to their own file && remove tests directory
-          run: find temp-process/kubeapps/templates/tests -name '*.yaml' -exec cat {} \; > deploy/manifests/kubeapps-tests.yaml && rm -r temp-process/kubeapps/templates/tests
-
-        - name: Save all processed YAMLs to one file
-          run: find temp-process/ -name '*.yaml' -exec cat {} \; > deploy/manifests/kubeapps.yaml
-
-
-        - name: Commit files
-          run: |
-            git config --local user.email "action@github.com"
-            git config --local user.name "GitHub Action"
-            git add deploy/manifests/
-            git commit -m "[action] process template"
-
-        - name: Push changes
-          uses: ad-m/github-push-action@master
-          with:
-            github_token: ${{ secrets.GITHUB_TOKEN }}
-
-        # - name: Add and Commit new processed files
-        #   uses: EndBug/add-and-commit@v2
-        #   with: 
-        #     author_name: GitHub Action
-        #     message: "[action] process template"
-        #     path: "deploy/manifests"
-        #     pattern: "*.yaml"
-        #     force: false
-        #   env:
-        #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Upload kubeapps.yaml to release
+        uses: actions/upload-release-asset@v1.0.1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: deploy/manifests/kubeapps.yaml
+          asset_name: kubeapps.yaml
+          asset_content_type: text/plain
+        
