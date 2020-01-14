@@ -3,9 +3,9 @@
 set -e
 set -u
 
-version="0.1"
-release="release-0.1"
 url=https://github.com/Altemista/asset-lifecycle-manager/releases/latest/download
+version=$(curl -fsSL https://api.github.com/repos/Altemista/asset-lifecycle-manager/releases/latest \
+  | grep tag_name | cut -d : -f 2 | tr -d \",)
 
 # THE DEFAULTS INITIALIZATION - OPTIONALS
 _arg_with_kubeapps="off"
@@ -134,19 +134,26 @@ parse_commandline() {
 }
 
 install_kubeapps() {
-  mongodb_password=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1)
-  curl -fsSL ${url}/kubeapps.yaml | sed -e "s/\${KUBEAPPS_HOSTNAME}/${_arg_kubeapps_hostname}/g" -e "s/\${MONGODB_PASSWORD}/${mongodb_password}/g" | kubectl apply -n altemistahub -f -
+  echo "Installing kubeapps..."
+  mongodb_password="$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1)"
+  curl -fsSL ${url}/kubeapps.yaml \
+  | sed -e "s|\${KUBEAPPS_HOSTNAME}|${_arg_kubeapps_hostname}|g" \
+        -e "s/mongodb-root-password: \".*\"/mongodb-root-password: \"${mongodb_password}\"/g" \
+  | kubectl apply -n altemistahub -f -
 }
 
 install_harbor() {
-  echo "Installing harbor"
+  echo "Installing harbor..."
+  echo "Not yet."
 }
 
 install_olm() {
+  echo "Installing olm..."
   curl -fsSL https://github.com/operator-framework/operator-lifecycle-manager/releases/latest/download/install.sh | bash -s 0.12.0
 }
 
 install_altemista_operator_registry() {
+  echo "Installing altemista operator registry..."
   curl -fsSL ${url}/aolm.yaml | kubectl apply -f -
 }
 
@@ -162,7 +169,7 @@ install() {
   fi
 }
 
-install
+install "$@"
 
 echo "Value of --with-kubeapps is $_arg_with_kubeapps"
 echo "Value of --kubeapps-hostname is $_arg_kubeapps_hostname"
