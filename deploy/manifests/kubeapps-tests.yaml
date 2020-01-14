@@ -1,0 +1,66 @@
+---
+# Source: kubeapps/templates/tests/test-chartsvc.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "release-name-chartsvc-test"
+  annotations:
+    "helm.sh/hook": test-success
+spec:
+  containers:
+    - name: release-name-chartsvc-test
+      image: bitnami/nginx:1.16.1-debian-9-r52
+      env:
+        - name: CHARTSVC_HOST
+          value: release-name-kubeapps-internal-chartsvc.altemistahub
+        - name: CHARTSVC_PORT
+          value: "8080"
+      command:
+        - sh
+        - -c
+        - curl -o /tmp/output $CHARTSVC_HOST:$CHARTSVC_PORT/v1/charts && cat /tmp/output && cat /tmp/output | grep wordpress
+  restartPolicy: Never
+---
+# Source: kubeapps/templates/tests/test-dashboard.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "release-name-dashboard-test"
+  annotations:
+    "helm.sh/hook": test-success
+spec:
+  containers:
+    - name: release-name-dashboard-test
+      image: bitnami/nginx:1.16.1-debian-9-r52
+      env:
+        - name: DASHBOARD_HOST
+          value: release-name-kubeapps.altemistahub
+      command:
+        - sh
+        - -c
+        - curl -o /tmp/output $DASHBOARD_HOST && cat /tmp/output && cat /tmp/output | grep 'You need to enable JavaScript to run this app'
+  restartPolicy: Never
+---
+# Source: kubeapps/templates/tests/test-tiller-proxy.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "release-name-tiller-proxy-test"
+  annotations:
+    "helm.sh/hook": test-success
+spec:
+  containers:
+    - name: release-name-tiller-proxy-test
+      image: bitnami/nginx:1.16.1-debian-9-r52
+      env:
+        - name: TILLER_PROXY_HOST
+          value: release-name-kubeapps-internal-tiller-proxy.altemistahub
+        - name: TILLER_PROXY_PORT
+          value: "8080"
+        - name: KUBEAPPS_RELEASE
+          value: release-name
+      command:
+        - sh
+        - -c
+        - "curl -o /tmp/output -ik -H \"Authorization: Bearer $(cat /var/run/secrets/kubernetes.io/serviceaccount/token)\" $TILLER_PROXY_HOST:$TILLER_PROXY_PORT/v1/releases && cat /tmp/output && cat /tmp/output | grep $KUBEAPPS_RELEASE"
+  restartPolicy: Never
