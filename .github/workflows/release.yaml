@@ -19,11 +19,12 @@ jobs:
           tag_name: ${{ github.ref }}
           release_name: release-${{ github.ref }}
           body: |
-            Changes in this Release
-            - First Change
-            - Second Change
-          draft: true
-          prerelease: false
+            ## Install
+            ```shell
+            curl -fsSL https://github.com/Altemista/asset-lifecycle-manager/releases/latest/download/install.sh | sh
+            ```
+            draft: true
+            prerelease: false
 
       - name: Upload aolm.yaml to release
         uses: actions/upload-release-asset@v1.0.1
