@@ -12,7 +12,7 @@ jobs:
 
       - name: Create Release
         id: create_release
-        uses: actions/create-release@v1
+        uses: actions/create-release@master
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
@@ -23,8 +23,8 @@ jobs:
             ```shell
             curl -fsSL https://github.com/Altemista/asset-lifecycle-manager/releases/latest/download/install.sh | sh
             ```
-            draft: true
-            prerelease: false
+          draft: true
+          prerelease: false
 
       - name: Upload aolm.yaml to release
         uses: actions/upload-release-asset@v1.0.1
