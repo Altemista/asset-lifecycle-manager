@@ -1,4 +1,4 @@
-on: 
+on:
   push:
     tags:
       - '*'
@@ -56,6 +56,16 @@ jobs:
           asset_name: kubeapps-tests.yaml
           asset_content_type: text/plain
 
+      - name: Upload kubeapps-cleanup.yaml to release
+        uses: actions/upload-release-asset@v1.0.1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: deploy/manifests/kubeapps-cleanup.yaml
+          asset_name: kubeapps-cleanup.yaml
+          asset_content_type: text/plain
+
       - name: Upload kubeapps.yaml to release
         uses: actions/upload-release-asset@v1.0.1
         env:
@@ -75,4 +85,3 @@ jobs:
           asset_path: install.sh
           asset_name: install.sh
           asset_content_type: text/plain
-        
