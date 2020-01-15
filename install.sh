@@ -137,11 +137,16 @@ parse_commandline() {
 
 install_kubeapps() {
   echo "Installing kubeapps..."
-  mongodb_password="$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1)"
+  mongodb_password="$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 24 | head -n 1 | base64)"
+
   curl -fsSL ${url}/kubeapps.yaml \
   | sed -e "s|\${KUBEAPPS_HOSTNAME}|${_arg_kubeapps_hostname}|g" \
         -e "s/mongodb-root-password: \".*\"/mongodb-root-password: \"${mongodb_password}\"/g" \
   | kubectl apply -n altemistahub -f -
+
+  if [ "$_arg_use_altemista_public_catalog" == "on" ]; then
+    kubectl apply -n altemistahub -f ${url}/apprepositories.yaml
+  fi
 }
 
 install_harbor() {
