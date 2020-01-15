@@ -8,9 +8,9 @@ metadata:
   annotations:
     "helm.sh/hook": pre-install
   labels:
-    app: release-name-kubeapps-internal-apprepository-controller
+    app: kubeapps-internal-apprepository-controller
     chart: kubeapps-3.2.3
-    release: release-name
+    release: kubeapps
     heritage: Tiller
 spec:
   type: helm

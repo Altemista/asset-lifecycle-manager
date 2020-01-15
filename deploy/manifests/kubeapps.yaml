@@ -3,11 +3,11 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: release-name-kubeapps-internal-tiller-proxy
+  name: kubeapps-internal-tiller-proxy
   labels:
     app: kubeapps
     chart: kubeapps-3.2.3
-    release: release-name
+    release: kubeapps
     heritage: Tiller
 spec:
   type: ClusterIP
@@ -17,33 +17,33 @@ spec:
       protocol: TCP
       name: http
   selector:
-    app: release-name-kubeapps-internal-tiller-proxy
-    release: release-name
+    app: kubeapps-internal-tiller-proxy
+    release: kubeapps
 
 ---
 # Source: kubeapps/templates/tiller-proxy-deployment.yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: release-name-kubeapps-internal-tiller-proxy
+  name: kubeapps-internal-tiller-proxy
   labels:
-    app: release-name-kubeapps-internal-tiller-proxy
+    app: kubeapps-internal-tiller-proxy
     chart: kubeapps-3.2.3
-    release: release-name
+    release: kubeapps
     heritage: Tiller
 spec:
   replicas: 2
   selector:
     matchLabels:
-      app: release-name-kubeapps-internal-tiller-proxy
-      release: release-name
+      app: kubeapps-internal-tiller-proxy
+      release: kubeapps
   template:
     metadata:
       labels:
-        app: release-name-kubeapps-internal-tiller-proxy
-        release: release-name
+        app: kubeapps-internal-tiller-proxy
+        release: kubeapps
     spec:
-      serviceAccountName: release-name-kubeapps-internal-tiller-proxy
+      serviceAccountName: kubeapps-internal-tiller-proxy
       # Increase termination timeout to let remaining operations to finish before killing the pods
       # This is because new releases/upgrades/deletions are synchronous operations
       terminationGracePeriodSeconds: 300      
@@ -58,7 +58,7 @@ spec:
           args:
             - --host=tiller-deploy.kube-system:44134
             - --user-agent-comment=kubeapps/v1.7.2
-            - --chartsvc-url=http://release-name-kubeapps-internal-chartsvc:8080
+            - --chartsvc-url=http://kubeapps-internal-chartsvc:8080
           env:
             - name: POD_NAMESPACE
               valueFrom:
@@ -91,102 +91,15 @@ spec:
             
 
 ---
-# Source: kubeapps/templates/mongodb-jobs-cleanup.yaml
-apiVersion: batch/v1
-kind: Job
-metadata:
-  name: release-name-kubeapps-internal-mongodb-jobs-cleanup
-  annotations:
-    helm.sh/hook: post-delete
-    helm.sh/hook-delete-policy: hook-succeeded
-  labels:
-    app: release-name-kubeapps-internal-mongodb-jobs-cleanup
-    chart: kubeapps-3.2.3
-    release: release-name
-    heritage: Tiller
-spec:
-  template:
-    metadata:
-      labels:
-        app: release-name-kubeapps-internal-mongodb-jobs-cleanup
-        release: release-name
-    spec:      
-      securityContext:
-        fsGroup: 
-        runAsUser: 1001
-      restartPolicy: OnFailure
-      serviceAccountName: release-name-kubeapps-internal-mongodb-jobs-cleanup
-      containers:
-        - name: kubectl
-          image: docker.io/bitnami/kubectl:1.16.3-r17
-          command:
-            - /bin/sh
-          args:
-            - -c
-            - "kubectl delete secret -n altemistahub kubeapps-mongodb || true"
-
----
-# Source: kubeapps/templates/apprepository-jobs-cleanup-rbac.yaml
-apiVersion: rbac.authorization.k8s.io/v1beta1
-kind: Role
-metadata:
-  name: release-name-kubeapps-internal-apprepository-jobs-cleanup
-  annotations:
-    helm.sh/hook: post-delete
-    helm.sh/hook-delete-policy: hook-succeeded
-    helm.sh/hook-weight: "-10"
-  labels:
-    app: release-name-kubeapps-internal-apprepository-jobs-cleanup
-    chart: kubeapps-3.2.3
-    release: release-name
-    heritage: Tiller
-rules:
-  - apiGroups:
-      - kubeapps.com
-    resources:
-      - apprepositories
-    verbs:
-      - list
-      - delete
-  - apiGroups:
-      - ""
-    resources:
-      - secrets
-    verbs:
-      - list
-      - delete
----
-apiVersion: rbac.authorization.k8s.io/v1beta1
-kind: RoleBinding
-metadata:
-  name: release-name-kubeapps-internal-apprepository-jobs-cleanup
-  annotations:
-    helm.sh/hook: post-delete
-    helm.sh/hook-delete-policy: hook-succeeded
-    helm.sh/hook-weight: "-10"
-  labels:
-    app: release-name-kubeapps-internal-apprepository-jobs-cleanup
-    chart: kubeapps-3.2.3
-    release: release-name
-    heritage: Tiller
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: Role
-  name: release-name-kubeapps-internal-apprepository-jobs-cleanup
-subjects:
-  - kind: ServiceAccount
-    name: release-name-kubeapps-internal-apprepository-jobs-cleanup
-    namespace: altemistahub
----
 # Source: kubeapps/templates/kubeapps-frontend-config.yaml
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: release-name-kubeapps-frontend-config
+  name: kubeapps-frontend-config
   labels:
-    app: release-name-kubeapps-frontend-config
+    app: kubeapps-frontend-config
     chart: kubeapps-3.2.3
-    release: release-name
+    release: kubeapps
     heritage: Tiller
 data:
   vhost.conf: |-
@@ -233,7 +146,7 @@ data:
         rewrite /api/chartsvc/(.*) /chartsvc/$1 break;
         rewrite /api/chartsvc /chartsvc break;
 
-        proxy_pass http://release-name-kubeapps-internal-tiller-proxy:8080;
+        proxy_pass http://kubeapps-internal-tiller-proxy:8080;
       }
 
       location ~* /api/tiller-deploy {
@@ -242,7 +155,7 @@ data:
         proxy_read_timeout 10m;
         rewrite /api/tiller-deploy/(.*) /$1 break;
         rewrite /api/tiller-deploy / break;
-        proxy_pass http://release-name-kubeapps-internal-tiller-proxy:8080;
+        proxy_pass http://kubeapps-internal-tiller-proxy:8080;
       }
 
       # The route for the Kubeapps backend API is not prefixed.
@@ -250,14 +163,14 @@ data:
         rewrite /api/(.*) /backend/$1 break;
         rewrite /api/ /backend break;
 
-        proxy_pass http://release-name-kubeapps-internal-tiller-proxy:8080;
+        proxy_pass http://kubeapps-internal-tiller-proxy:8080;
       }
 
       location / {
         # Add the Authorization header if exists
         add_header Authorization $http_authorization;
 
-        proxy_pass http://release-name-kubeapps-internal-dashboard:8080;
+        proxy_pass http://kubeapps-internal-dashboard:8080;
       }
     }
 
@@ -266,11 +179,11 @@ data:
 apiVersion: v1
 kind: Service
 metadata:
-  name: release-name-kubeapps-internal-dashboard
+  name: kubeapps-internal-dashboard
   labels:
     app: kubeapps
     chart: kubeapps-3.2.3
-    release: release-name
+    release: kubeapps
     heritage: Tiller
 spec:
   type: ClusterIP
@@ -280,8 +193,8 @@ spec:
       protocol: TCP
       name: http
   selector:
-    app: release-name-kubeapps-internal-dashboard
-    release: release-name
+    app: kubeapps-internal-dashboard
+    release: kubeapps
 
 ---
 # Source: kubeapps/templates/apprepository-crd.yaml
@@ -294,9 +207,9 @@ metadata:
   annotations:
     "helm.sh/hook": crd-install
   labels:
-    app: release-name-kubeapps-internal-apprepository-controller
+    app: kubeapps-internal-apprepository-controller
     chart: kubeapps-3.2.3
-    release: release-name
+    release: kubeapps
     heritage: Tiller
 spec:
   group: kubeapps.com
@@ -308,59 +221,15 @@ spec:
       - apprepos
   version: v1alpha1
 ---
-# Source: kubeapps/templates/mongodb-jobs-cleanup-rbac.yaml
-apiVersion: rbac.authorization.k8s.io/v1beta1
-kind: Role
-metadata:
-  name: release-name-kubeapps-internal-mongodb-jobs-cleanup
-  annotations:
-    helm.sh/hook: post-delete
-    helm.sh/hook-delete-policy: hook-succeeded
-    helm.sh/hook-weight: "-10"
-  labels:
-    app: release-name-kubeapps-internal-mongodb-jobs-cleanup
-    chart: kubeapps-3.2.3
-    release: release-name
-    heritage: Tiller
-rules:
-  - apiGroups:
-      - ""
-    resources:
-      - secrets
-    verbs:
-      - delete
----
-apiVersion: rbac.authorization.k8s.io/v1beta1
-kind: RoleBinding
-metadata:
-  name: release-name-kubeapps-internal-mongodb-jobs-cleanup
-  annotations:
-    helm.sh/hook: post-delete
-    helm.sh/hook-delete-policy: hook-succeeded
-    helm.sh/hook-weight: "-10"
-  labels:
-    app: release-name-kubeapps-internal-mongodb-jobs-cleanup
-    chart: kubeapps-3.2.3
-    release: release-name
-    heritage: Tiller
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: Role
-  name: release-name-kubeapps-internal-mongodb-jobs-cleanup
-subjects:
-  - kind: ServiceAccount
-    name: release-name-kubeapps-internal-mongodb-jobs-cleanup
-    namespace: altemistahub
----
 # Source: kubeapps/templates/tiller-proxy-rbac.yaml
 apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: Role
 metadata:
-  name: release-name-kubeapps-internal-tiller-proxy
+  name: kubeapps-internal-tiller-proxy
   labels:
-    app: release-name-kubeapps-internal-tiller-proxy
+    app: kubeapps-internal-tiller-proxy
     chart: kubeapps-3.2.3
-    release: release-name
+    release: kubeapps
     heritage: Tiller
 rules:
   - apiGroups:
@@ -379,69 +248,31 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: RoleBinding
 metadata:
-  name: release-name-kubeapps-internal-tiller-proxy
+  name: kubeapps-internal-tiller-proxy
   labels:
-    app: release-name-kubeapps-internal-tiller-proxy
+    app: kubeapps-internal-tiller-proxy
     chart: kubeapps-3.2.3
-    release: release-name
+    release: kubeapps
     heritage: Tiller
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
-  name: release-name-kubeapps-internal-tiller-proxy
+  name: kubeapps-internal-tiller-proxy
 subjects:
   - kind: ServiceAccount
-    name: release-name-kubeapps-internal-tiller-proxy
+    name: kubeapps-internal-tiller-proxy
     namespace: altemistahub
-
----
-# Source: kubeapps/templates/apprepository-jobs-cleanup.yaml
-# Clean up the AppRepository resources used by this Kubeapps instance
-apiVersion: batch/v1
-kind: Job
-metadata:
-  name: release-name-kubeapps-internal-apprepository-jobs-cleanup
-  annotations:
-    helm.sh/hook: post-delete
-    helm.sh/hook-delete-policy: hook-succeeded
-  labels:
-    app: release-name-kubeapps-internal-apprepository-jobs-cleanup
-    chart: kubeapps-3.2.3
-    release: release-name
-    heritage: Tiller
-spec:
-  template:
-    metadata:
-      labels:
-        app: release-name-kubeapps-internal-apprepository-jobs-cleanup
-        release: release-name
-    spec:      
-      securityContext:
-        fsGroup: 
-        runAsUser: 1001
-      restartPolicy: OnFailure
-      serviceAccountName: release-name-kubeapps-internal-apprepository-jobs-cleanup
-      containers:
-        - name: kubectl
-          image: docker.io/bitnami/kubectl:1.16.3-r17
-          command:
-            - /bin/sh
-          args:
-            - -ec
-            - |
-              kubectl delete apprepositories.kubeapps.com -n altemistahub --all
-              kubectl delete secrets -n altemistahub -l app=kubeapps,release=release-name
 
 ---
 # Source: kubeapps/templates/apprepository-serviceaccount.yaml
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: release-name-kubeapps-internal-apprepository-controller
+  name: kubeapps-internal-apprepository-controller
   labels:
-    app: release-name-kubeapps-internal-apprepository-controller
+    app: kubeapps-internal-apprepository-controller
     chart: kubeapps-3.2.3
-    release: release-name
+    release: kubeapps
     heritage: Tiller
 
 ---
@@ -449,25 +280,25 @@ metadata:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: release-name-kubeapps-internal-dashboard
+  name: kubeapps-internal-dashboard
   labels:
-    app: release-name-kubeapps-internal-dashboard
+    app: kubeapps-internal-dashboard
     chart: kubeapps-3.2.3
-    release: release-name
+    release: kubeapps
     heritage: Tiller
 spec:
   replicas: 2
   selector:
     matchLabels:
-      app: release-name-kubeapps-internal-dashboard
-      release: release-name
+      app: kubeapps-internal-dashboard
+      release: kubeapps
   template:
     metadata:
       annotations:
-        checksum/config: 9a0f104e3d2f2d3e0d288e2dc596f4101ca28e87fccd41ab80073eb75494f4f6
+        checksum/config: 80cfd68b14f4c0517d2b8734f86712b1b5e03828837fdec24d2a96e16c67368a
       labels:
-        app: release-name-kubeapps-internal-dashboard
-        release: release-name
+        app: kubeapps-internal-dashboard
+        release: kubeapps
     spec:      
       securityContext:
         fsGroup: 
@@ -509,13 +340,13 @@ spec:
       volumes:
         - name: vhost
           configMap:
-            name: release-name-kubeapps-internal-dashboard-config
+            name: kubeapps-internal-dashboard-config
             items:
               - key: vhost.conf
                 path: vhost.conf
         - name: config
           configMap:
-            name: release-name-kubeapps-internal-dashboard-config
+            name: kubeapps-internal-dashboard-config
             items:
               - key: config.json
                 path: config.json
@@ -525,11 +356,11 @@ spec:
 apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
-  name: release-name-kubeapps
+  name: kubeapps
   labels: 
     app: kubeapps
     chart: kubeapps-3.2.3
-    release: release-name
+    release: kubeapps
     heritage: Tiller
   annotations:
     nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
@@ -541,7 +372,7 @@ spec:
         paths:
         - path: /
           backend:
-            serviceName: release-name-kubeapps
+            serviceName: kubeapps
             servicePort: http
     ## The block below is deprecated and must removed on 3.0.0
     - host: kubeapps.local
@@ -549,7 +380,7 @@ spec:
         paths:
         - path: /
           backend:
-            serviceName: release-name-kubeapps
+            serviceName: kubeapps
             servicePort: http
     ## end of block
   tls:
@@ -560,43 +391,27 @@ spec:
       secretName: ${KUBEAPPS_HOSTNAME}-tls
 
 ---
-# Source: kubeapps/templates/apprepository-jobs-cleanup-serviceaccount.yaml
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: release-name-kubeapps-internal-apprepository-jobs-cleanup
-  annotations:
-    helm.sh/hook: post-delete
-    helm.sh/hook-delete-policy: hook-succeeded
-    helm.sh/hook-weight: "-10"
-  labels:
-    app: release-name-kubeapps-internal-apprepository-jobs-cleanup
-    chart: kubeapps-3.2.3
-    release: release-name
-    heritage: Tiller
-
----
 # Source: kubeapps/templates/chartsvc-deployment.yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: release-name-kubeapps-internal-chartsvc
+  name: kubeapps-internal-chartsvc
   labels:
-    app: release-name-kubeapps-internal-chartsvc
+    app: kubeapps-internal-chartsvc
     chart: kubeapps-3.2.3
-    release: release-name
+    release: kubeapps
     heritage: Tiller
 spec:
   replicas: 2
   selector:
     matchLabels:
-      app: release-name-kubeapps-internal-chartsvc
-      release: release-name
+      app: kubeapps-internal-chartsvc
+      release: kubeapps
   template:
     metadata:
       labels:
-        app: release-name-kubeapps-internal-chartsvc
-        release: release-name
+        app: kubeapps-internal-chartsvc
+        release: kubeapps
     spec:      
       securityContext:
         fsGroup: 
@@ -608,7 +423,7 @@ spec:
             - /chartsvc
           args:
             - --mongo-user=root
-            - --mongo-url=release-name-mongodb
+            - --mongo-url=kubeapps-mongodb
           env:
             - name: MONGO_PASSWORD
               valueFrom:
@@ -638,11 +453,11 @@ spec:
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: release-name-kubeapps-internal-tiller-proxy
+  name: kubeapps-internal-tiller-proxy
   labels:
-    app: release-name-kubeapps-internal-tiller-proxy
+    app: kubeapps-internal-tiller-proxy
     chart: kubeapps-3.2.3
-    release: release-name
+    release: kubeapps
     heritage: Tiller
 
 ---
@@ -650,11 +465,11 @@ metadata:
 apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: Role
 metadata:
-  name: release-name-kubeapps-internal-apprepository-controller
+  name: kubeapps-internal-apprepository-controller
   labels:
-    app: release-name-kubeapps-internal-apprepository-controller
+    app: kubeapps-internal-apprepository-controller
     chart: kubeapps-3.2.3
-    release: release-name
+    release: kubeapps
     heritage: Tiller
 rules:
   - apiGroups:
@@ -694,26 +509,26 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: RoleBinding
 metadata:
-  name: release-name-kubeapps-internal-apprepository-controller
+  name: kubeapps-internal-apprepository-controller
   labels:
-    app: release-name-kubeapps-internal-apprepository-controller
+    app: kubeapps-internal-apprepository-controller
     chart: kubeapps-3.2.3
-    release: release-name
+    release: kubeapps
     heritage: Tiller
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
-  name: release-name-kubeapps-internal-apprepository-controller
+  name: kubeapps-internal-apprepository-controller
 subjects:
   - kind: ServiceAccount
-    name: release-name-kubeapps-internal-apprepository-controller
+    name: kubeapps-internal-apprepository-controller
     namespace: altemistahub
 ---
 # Define role, but no binding, so users can be bound to this role
 apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: Role
 metadata:
-  name: release-name-repositories-read
+  name: kubeapps-repositories-read
 rules:
   - apiGroups:
       - kubeapps.com
@@ -727,7 +542,7 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: Role
 metadata:
-  name: release-name-repositories-write
+  name: kubeapps-repositories-write
 rules:
   - apiGroups:
       - kubeapps.com
@@ -746,11 +561,11 @@ rules:
 apiVersion: v1
 kind: Service
 metadata:
-  name: release-name-kubeapps-internal-chartsvc
+  name: kubeapps-internal-chartsvc
   labels:
     app: kubeapps
     chart: kubeapps-3.2.3
-    release: release-name
+    release: kubeapps
     heritage: Tiller
 spec:
   type: ClusterIP
@@ -760,8 +575,8 @@ spec:
       protocol: TCP
       name: http
   selector:
-    app: release-name-kubeapps-internal-chartsvc
-    release: release-name
+    app: kubeapps-internal-chartsvc
+    release: kubeapps
 
 ---
 # Source: kubeapps/templates/tiller-proxy-secret.yaml
@@ -772,25 +587,25 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: release-name-kubeapps
+  name: kubeapps
   labels:
-    app: release-name-kubeapps
+    app: kubeapps
     chart: kubeapps-3.2.3
-    release: release-name
+    release: kubeapps
     heritage: Tiller
 spec:
   replicas: 2
   selector:
     matchLabels:
-      app: release-name-kubeapps
-      release: release-name
+      app: kubeapps
+      release: kubeapps
   template:
     metadata:
       annotations:
-        checksum/config: a963934ade2bce2cebadf888527cf987e971968da0a3ee86fdbce1c1209a592a
+        checksum/config: a8947cfab490b045fb47ad419e12a8092e6dc72f0ee97a98662cd1140a8a3637
       labels:
-        app: release-name-kubeapps
-        release: release-name
+        app: kubeapps
+        release: kubeapps
     spec:      
       securityContext:
         fsGroup: 
@@ -829,32 +644,32 @@ spec:
       volumes:
         - name: vhost
           configMap:
-            name: release-name-kubeapps-frontend-config
+            name: kubeapps-frontend-config
 
 ---
 # Source: kubeapps/templates/apprepository-deployment.yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: release-name-kubeapps-internal-apprepository-controller
+  name: kubeapps-internal-apprepository-controller
   labels:
-    app: release-name-kubeapps-internal-apprepository-controller
+    app: kubeapps-internal-apprepository-controller
     chart: kubeapps-3.2.3
-    release: release-name
+    release: kubeapps
     heritage: Tiller
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: release-name-kubeapps-internal-apprepository-controller
-      release: release-name
+      app: kubeapps-internal-apprepository-controller
+      release: kubeapps
   template:
     metadata:
       labels:
-        app: release-name-kubeapps-internal-apprepository-controller
-        release: release-name
+        app: kubeapps-internal-apprepository-controller
+        release: kubeapps
     spec:
-      serviceAccountName: release-name-kubeapps-internal-apprepository-controller      
+      serviceAccountName: kubeapps-internal-apprepository-controller      
       securityContext:
         fsGroup: 
         runAsUser: 1001
@@ -868,7 +683,7 @@ spec:
             - --user-agent-comment=kubeapps/v1.7.2
             - --repo-sync-image=docker.io/bitnami/kubeapps-chart-repo:1.9.0-r2
             - --namespace=altemistahub
-            - --mongo-url=release-name-mongodb
+            - --mongo-url=kubeapps-mongodb
             - --mongo-secret-name=kubeapps-mongodb
           resources:
             limits:
@@ -889,36 +704,20 @@ metadata:
     helm.sh/hook: pre-install
   labels:
     chart: kubeapps-3.2.3
-    release: release-name
+    release: kubeapps
     heritage: Tiller
 data:
-  mongodb-root-password: "aHQ4TUlma0VHdw=="
----
-# Source: kubeapps/templates/mongodb-jobs-cleanup-serviceaccount.yaml
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: release-name-kubeapps-internal-mongodb-jobs-cleanup
-  annotations:
-    helm.sh/hook: post-delete
-    helm.sh/hook-delete-policy: hook-succeeded
-    helm.sh/hook-weight: "-10"
-  labels:
-    app: release-name-kubeapps-internal-mongodb-jobs-cleanup
-    chart: kubeapps-3.2.3
-    release: release-name
-    heritage: Tiller
-
+  mongodb-root-password: "bEZCWW9aNmdJcw=="
 ---
 # Source: kubeapps/templates/kubeapps-frontend-service.yaml
 apiVersion: v1
 kind: Service
 metadata:
-  name: release-name-kubeapps
+  name: kubeapps
   labels:
     app: kubeapps
     chart: kubeapps-3.2.3
-    release: release-name
+    release: kubeapps
     heritage: Tiller
 spec:
   type: ClusterIP
@@ -928,19 +727,19 @@ spec:
       protocol: TCP
       name: http
   selector:
-    app: release-name-kubeapps
-    release: release-name
+    app: kubeapps
+    release: kubeapps
 
 ---
 # Source: kubeapps/templates/dashboard-config.yaml
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: release-name-kubeapps-internal-dashboard-config
+  name: kubeapps-internal-dashboard-config
   labels:
-    app: release-name-kubeapps-internal-dashboard-config
+    app: kubeapps-internal-dashboard-config
     chart: kubeapps-3.2.3
-    release: release-name
+    release: kubeapps
     heritage: Tiller
 data:
   vhost.conf: |-
@@ -987,27 +786,27 @@ data:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: release-name-mongodb
+  name: kubeapps-mongodb
   labels:
     app: mongodb
     chart: mongodb-7.2.9
-    release: "release-name"
+    release: "kubeapps"
     heritage: "Tiller"
 spec:
   selector:
     matchLabels:
       app: mongodb
-      release: "release-name"
+      release: "kubeapps"
   template:
     metadata:
       labels:
         app: mongodb
-        release: "release-name"
+        release: "kubeapps"
         chart: mongodb-7.2.9
     spec:      
       initContainers:
       containers:
-      - name: release-name-mongodb
+      - name: kubeapps-mongodb
         image: docker.io/bitnami/mongodb:4.0.12-debian-9-r43
         imagePullPolicy: "IfNotPresent"
         env:
@@ -1070,11 +869,11 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: release-name-mongodb
+  name: kubeapps-mongodb
   labels:
     app: mongodb
     chart: mongodb-7.2.9
-    release: "release-name"
+    release: "kubeapps"
     heritage: "Tiller"
 spec:
   type: ClusterIP
@@ -1084,5 +883,5 @@ spec:
     targetPort: mongodb
   selector:
     app: mongodb
-    release: "release-name"
+    release: "kubeapps"
 

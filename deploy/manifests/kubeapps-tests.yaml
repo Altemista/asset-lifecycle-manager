@@ -3,16 +3,16 @@
 apiVersion: v1
 kind: Pod
 metadata:
-  name: "release-name-chartsvc-test"
+  name: "kubeapps-chartsvc-test"
   annotations:
     "helm.sh/hook": test-success
 spec:
   containers:
-    - name: release-name-chartsvc-test
+    - name: kubeapps-chartsvc-test
       image: bitnami/nginx:1.16.1-debian-9-r52
       env:
         - name: CHARTSVC_HOST
-          value: release-name-kubeapps-internal-chartsvc.altemistahub
+          value: kubeapps-internal-chartsvc.altemistahub
         - name: CHARTSVC_PORT
           value: "8080"
       command:
@@ -26,16 +26,16 @@ spec:
 apiVersion: v1
 kind: Pod
 metadata:
-  name: "release-name-dashboard-test"
+  name: "kubeapps-dashboard-test"
   annotations:
     "helm.sh/hook": test-success
 spec:
   containers:
-    - name: release-name-dashboard-test
+    - name: kubeapps-dashboard-test
       image: bitnami/nginx:1.16.1-debian-9-r52
       env:
         - name: DASHBOARD_HOST
-          value: release-name-kubeapps.altemistahub
+          value: kubeapps.altemistahub
       command:
         - sh
         - -c
@@ -47,20 +47,20 @@ spec:
 apiVersion: v1
 kind: Pod
 metadata:
-  name: "release-name-tiller-proxy-test"
+  name: "kubeapps-tiller-proxy-test"
   annotations:
     "helm.sh/hook": test-success
 spec:
   containers:
-    - name: release-name-tiller-proxy-test
+    - name: kubeapps-tiller-proxy-test
       image: bitnami/nginx:1.16.1-debian-9-r52
       env:
         - name: TILLER_PROXY_HOST
-          value: release-name-kubeapps-internal-tiller-proxy.altemistahub
+          value: kubeapps-internal-tiller-proxy.altemistahub
         - name: TILLER_PROXY_PORT
           value: "8080"
         - name: KUBEAPPS_RELEASE
-          value: release-name
+          value: kubeapps
       command:
         - sh
         - -c
