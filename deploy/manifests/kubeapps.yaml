@@ -707,7 +707,7 @@ metadata:
     release: kubeapps
     heritage: Tiller
 data:
-  mongodb-root-password: "WTVpdFpONTIzWg=="
+  mongodb-root-password: "S3J6VzZPWmpiaw=="
 ---
 # Source: kubeapps/templates/kubeapps-frontend-service.yaml
 apiVersion: v1
