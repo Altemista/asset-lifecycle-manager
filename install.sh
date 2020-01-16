@@ -137,7 +137,7 @@ parse_commandline() {
 
 install_kubeapps() {
   echo "Installing kubeapps..."
-  mongodb_password="$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 24 | head -n 1 | base64)"
+  mongodb_password="$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 10 | head -n 1 | tr -d '\n' | base64)"
 
   curl -fsSL ${url}/kubeapps.yaml \
   | sed -e "s|\${KUBEAPPS_HOSTNAME}|${_arg_kubeapps_hostname}|g" \
