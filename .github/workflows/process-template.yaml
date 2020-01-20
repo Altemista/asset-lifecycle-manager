@@ -36,7 +36,7 @@ jobs:
           run: mv temp-process/kubeapps/templates/apprepositories.yaml deploy/manifests/kubeapps-apprepositories.yaml
 
         - name: Move tests to their own file && remove tests directory
-          run: find temp-process/kubeapps/templates/tests -name '*.yaml' -exec cat {} \; -exec echo \; > deploy/manifests/kubeapps-tests.yaml && rm -r temp-process/kubeapps/templates/tests
+          run: (find temp-process/kubeapps/templates/tests -name '*.yaml' -exec cat {} \; -exec echo \; > deploy/manifests/kubeapps-tests.yaml && rm -r temp-process/kubeapps/templates/tests) || true
 
         - name: Move cleanup resources to their own file && remove these files
           run: find temp-process/kubeapps/templates -name '*cleanup*.yaml' -exec cat {} \; -exec echo \; > deploy/manifests/kubeapps-cleanup.yaml && find temp-process/kubeapps/templates -name '*cleanup*.yaml' -exec rm -f {} \;
@@ -54,7 +54,7 @@ jobs:
           run: helm template --name harbor -f deploy/templates/harbor-values.yaml harbor/ --namespace altemistahub --output-dir temp-process
 
         - name: Move tests to their own file && remove tests directory
-          run: find temp-process/harbor/templates/tests -name '*.yaml' -exec cat {} \; -exec echo \; > deploy/manifests/harbor-tests.yaml && rm -r temp-process/harbor/templates/tests
+          run: (find temp-process/harbor/templates/tests -name '*.yaml' -exec cat {} \; -exec echo \; > deploy/manifests/harbor-tests.yaml && rm -r temp-process/harbor/templates/tests) || true
 
         - name: Save all processed YAMLs to one file
           run: find temp-process/harbor/ -name '*.yaml' -exec cat {} \; -exec echo \; > deploy/manifests/harbor.yaml
