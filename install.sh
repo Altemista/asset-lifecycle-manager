@@ -145,13 +145,18 @@ install_kubeapps() {
   | kubectl apply -n altemistahub -f -
 
   if [ "$_arg_use_altemista_public_catalog" == "on" ]; then
-    kubectl apply -n altemistahub -f ${url}/apprepositories.yaml
+    kubectl apply -n altemistahub -f ${url}/kubeapps-apprepositories.yaml
   fi
 }
 
 install_harbor() {
   echo "Installing harbor..."
-  echo "Not yet."
+  harbor_admin_password="$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 20 | head -n 1 | tr -d '\n')"
+
+  curl -fsSL ${url}/harbor.yaml \
+  | sed -e "s|\${HARBOR_HOSTNAME}|${_arg_harbor_hostname}|g" \
+        -e "s/\${HARBOR_ADMIN_PASSWORD}/${harbor_admin_password}/g" \
+  | kubectl apply -n altemistahub -f -
 }
 
 install_olm() {

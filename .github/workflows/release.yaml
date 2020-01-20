@@ -36,14 +36,14 @@ jobs:
           asset_name: aolm.yaml
           asset_content_type: text/plain
 
-      - name: Upload apprepositories.yaml to release
+      - name: Upload kubeapps-apprepositories.yaml to release
         uses: actions/upload-release-asset@v1.0.1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: deploy/manifests/apprepositories.yaml
-          asset_name: apprepositories.yaml
+          asset_path: deploy/manifests/kubeapps-apprepositories.yaml
+          asset_name: kubeapps-apprepositories.yaml
           asset_content_type: text/plain
 
       - name: Upload kubeapps-tests.yaml to release
@@ -74,6 +74,16 @@ jobs:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: deploy/manifests/kubeapps.yaml
           asset_name: kubeapps.yaml
+          asset_content_type: text/plain
+
+      - name: Upload harbor.yaml to release
+        uses: actions/upload-release-asset@v1.0.1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: deploy/manifests/harbor.yaml
+          asset_name: harbor.yaml
           asset_content_type: text/plain
 
       - name: Upload install.sh to release

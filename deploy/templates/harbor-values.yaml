@@ -1,0 +1,19 @@
+harborAdminPassword: ${HARBOR_ADMIN_PASSWORD}
+
+expose:
+  type: ingress
+  ingress:
+    hosts:
+      core: core.${HARBOR_HOSTNAME}
+      notary: notary.${HARBOR_HOSTNAME}
+    controller: default
+    annotations:
+#      kubernetes.io/ingress.class: nginx
+      nginx.ingress.kubernetes.io/proxy-body-size: "0"
+  tls:
+    enabled: false
+
+externalURL: http://${HARBOR_HOSTNAME}
+
+persistence:
+  enabled: false
