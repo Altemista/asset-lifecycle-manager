@@ -386,9 +386,6 @@ spec:
   tls:
     ## The block below is deprecated and must removed on 3.0.0
     ## end of block
-    - hosts:
-        - ${KUBEAPPS_HOSTNAME}
-      secretName: ${KUBEAPPS_HOSTNAME}-tls
 
 ---
 # Source: kubeapps/templates/chartsvc-deployment.yaml
@@ -707,7 +704,7 @@ metadata:
     release: kubeapps
     heritage: Tiller
 data:
-  mongodb-root-password: "R3hRM09rcGoxaw=="
+  mongodb-root-password: "SkhXN3J0VG1YSQ=="
 ---
 # Source: kubeapps/templates/kubeapps-frontend-service.yaml
 apiVersion: v1
