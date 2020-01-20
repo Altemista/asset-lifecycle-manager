@@ -24,7 +24,7 @@ spec:
 apiVersion: kubeapps.com/v1alpha1
 kind: AppRepository
 metadata:
-  name: 
+  name: organization
   annotations:
     "helm.sh/hook": pre-install
   labels:
