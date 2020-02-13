@@ -9,7 +9,7 @@ metadata:
     "helm.sh/hook": pre-install
   labels:
     app: kubeapps-internal-apprepository-controller
-    chart: kubeapps-3.2.3
+    chart: kubeapps-3.3.1
     release: kubeapps
     heritage: Tiller
 spec:
@@ -29,7 +29,7 @@ metadata:
     "helm.sh/hook": pre-install
   labels:
     app: kubeapps-internal-apprepository-controller
-    chart: kubeapps-3.2.3
+    chart: kubeapps-3.3.1
     release: kubeapps
     heritage: Tiller
 spec:

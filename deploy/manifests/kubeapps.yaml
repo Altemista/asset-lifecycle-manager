@@ -1,69 +1,235 @@
 ---
-# Source: kubeapps/templates/tiller-proxy-service.yaml
-apiVersion: v1
-kind: Service
+# Source: kubeapps/templates/ingress.yaml
+apiVersion: extensions/v1beta1
+kind: Ingress
 metadata:
-  name: kubeapps-internal-tiller-proxy
-  labels:
+  name: kubeapps
+  labels: 
     app: kubeapps
-    chart: kubeapps-3.2.3
+    chart: kubeapps-3.3.1
     release: kubeapps
     heritage: Tiller
+  annotations:
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
 spec:
-  type: ClusterIP
-  ports:
-    - port: 8080
-      targetPort: http
-      protocol: TCP
-      name: http
-  selector:
-    app: kubeapps-internal-tiller-proxy
-    release: kubeapps
+  rules:
+    - host: ${KUBEAPPS_HOSTNAME}
+      http:
+        paths:
+        - path: /
+          backend:
+            serviceName: kubeapps
+            servicePort: http
+    ## The block below is deprecated and must removed on 3.0.0
+    ## end of block
 
 ---
-# Source: kubeapps/templates/tiller-proxy-deployment.yaml
+# Source: kubeapps/templates/kubeapps-frontend-deployment.yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: kubeapps-internal-tiller-proxy
+  name: kubeapps
   labels:
-    app: kubeapps-internal-tiller-proxy
-    chart: kubeapps-3.2.3
+    app: kubeapps
+    chart: kubeapps-3.3.1
     release: kubeapps
     heritage: Tiller
 spec:
   replicas: 2
   selector:
     matchLabels:
-      app: kubeapps-internal-tiller-proxy
+      app: kubeapps
       release: kubeapps
   template:
     metadata:
+      annotations:
+        checksum/config: a21e59e22c7d96e337df9a54cd0dd71a8c0c860d2625364e0691cc215f4d9275
       labels:
-        app: kubeapps-internal-tiller-proxy
+        app: kubeapps
         release: kubeapps
-    spec:
-      serviceAccountName: kubeapps-internal-tiller-proxy
-      # Increase termination timeout to let remaining operations to finish before killing the pods
-      # This is because new releases/upgrades/deletions are synchronous operations
-      terminationGracePeriodSeconds: 300      
+    spec:      
       securityContext:
         fsGroup: 
         runAsUser: 1001
       containers:
-        - name: proxy
-          image: docker.io/bitnami/kubeapps-tiller-proxy:1.7.2-scratch-r0
+        - name: nginx
+          image: docker.io/bitnami/nginx:1.16.1-debian-9-r52
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 60
+            timeoutSeconds: 5
+            
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 0
+            timeoutSeconds: 5
+            
+          volumeMounts:
+            - name: vhost
+              mountPath: /opt/bitnami/nginx/conf/server_blocks
+          ports:
+            - name: http
+              containerPort: 8080
+          resources:
+            limits:
+              cpu: 250m
+              memory: 128Mi
+            requests:
+              cpu: 25m
+              memory: 32Mi
+            
+      volumes:
+        - name: vhost
+          configMap:
+            name: kubeapps-frontend-config
+
+---
+# Source: kubeapps/templates/tiller-proxy-secret.yaml
+# The tls ca certificate is only required when tls.verify is set to true, we fail otherwise.
+
+---
+# Source: kubeapps/templates/apprepository-rbac.yaml
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: Role
+metadata:
+  name: kubeapps-internal-apprepository-controller
+  labels:
+    app: kubeapps-internal-apprepository-controller
+    chart: kubeapps-3.3.1
+    release: kubeapps
+    heritage: Tiller
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - events
+    verbs:
+      - create
+  - apiGroups:
+      - batch
+    resources:
+      - cronjobs
+    verbs:
+      - create
+      - get
+      - list
+      - update
+      - watch
+      - delete
+  - apiGroups:
+      - batch
+    resources:
+      - jobs
+    verbs:
+      - create
+  - apiGroups:
+      - kubeapps.com
+    resources:
+      - apprepositories
+      - apprepositories/finalizers
+    verbs:
+      - get
+      - list
+      - update
+      - watch
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: RoleBinding
+metadata:
+  name: kubeapps-internal-apprepository-controller
+  labels:
+    app: kubeapps-internal-apprepository-controller
+    chart: kubeapps-3.3.1
+    release: kubeapps
+    heritage: Tiller
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: kubeapps-internal-apprepository-controller
+subjects:
+  - kind: ServiceAccount
+    name: kubeapps-internal-apprepository-controller
+    namespace: altemistahub
+---
+# Define role, but no binding, so users can be bound to this role
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: Role
+metadata:
+  name: kubeapps-repositories-read
+rules:
+  - apiGroups:
+      - kubeapps.com
+    resources:
+      - apprepositories
+    verbs:
+      - list
+      - get
+---
+# Define role, but no binding, so users can be bound to this role
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: Role
+metadata:
+  name: kubeapps-repositories-write
+rules:
+  - apiGroups:
+      - kubeapps.com
+    resources:
+      - apprepositories
+    verbs:
+      - "*"
+  - apiGroups:
+      - ""
+    resources:
+      - secrets
+    verbs:
+      - create
+---
+# Source: kubeapps/templates/assetsvc-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kubeapps-internal-assetsvc
+  labels:
+    app: kubeapps-internal-assetsvc
+    chart: kubeapps-3.3.1
+    release: kubeapps
+    heritage: Tiller
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: kubeapps-internal-assetsvc
+      release: kubeapps
+  template:
+    metadata:
+      labels:
+        app: kubeapps-internal-assetsvc
+        release: kubeapps
+    spec:      
+      securityContext:
+        fsGroup: 
+        runAsUser: 1001
+      containers:
+        - name: assetsvc
+          image: docker.io/bitnami/kubeapps-assetsvc:1.8.1-scratch-r0
           command:
-            - /proxy
+            - /assetsvc
           args:
-            - --host=tiller-deploy.kube-system:44134
-            - --user-agent-comment=kubeapps/v1.7.2
-            - --chartsvc-url=http://kubeapps-internal-chartsvc:8080
+            - --database-type=mongodb
+            - --database-user=root
+            - --database-name=charts
+            - --database-url=kubeapps-mongodb
           env:
-            - name: POD_NAMESPACE
+            - name: DB_PASSWORD
               valueFrom:
-                fieldRef:
-                  fieldPath: metadata.namespace
+                secretKeyRef:
+                  name: kubeapps-mongodb
+                  key: mongodb-root-password
           ports:
             - name: http
               containerPort: 8080
@@ -81,15 +247,135 @@ spec:
             initialDelaySeconds: 0
             timeoutSeconds: 5
             
-          resources:
-            limits:
-              cpu: 250m
-              memory: 256Mi
-            requests:
-              cpu: 25m
-              memory: 32Mi
-            
 
+---
+# Source: kubeapps/templates/kubeapps-frontend-service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: kubeapps
+  labels:
+    app: kubeapps
+    chart: kubeapps-3.3.1
+    release: kubeapps
+    heritage: Tiller
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app: kubeapps
+    release: kubeapps
+
+---
+# Source: kubeapps/templates/apprepository-crd.yaml
+# The condition above will be true if another instance of Kubeapps is
+# already installed
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: apprepositories.kubeapps.com
+  annotations:
+    "helm.sh/hook": crd-install
+  labels:
+    app: kubeapps-internal-apprepository-controller
+    chart: kubeapps-3.3.1
+    release: kubeapps
+    heritage: Tiller
+spec:
+  group: kubeapps.com
+  scope: Namespaced
+  names:
+    kind: AppRepository
+    plural: apprepositories
+    shortNames:
+      - apprepos
+  version: v1alpha1
+---
+# Source: kubeapps/templates/tiller-proxy-serviceaccount.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: kubeapps-internal-tiller-proxy
+  labels:
+    app: kubeapps-internal-tiller-proxy
+    chart: kubeapps-3.3.1
+    release: kubeapps
+    heritage: Tiller
+
+---
+# Source: kubeapps/templates/tiller-proxy-service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: kubeapps-internal-tiller-proxy
+  labels:
+    app: kubeapps
+    chart: kubeapps-3.3.1
+    release: kubeapps
+    heritage: Tiller
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8080
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app: kubeapps-internal-tiller-proxy
+    release: kubeapps
+
+---
+# Source: kubeapps/templates/dashboard-service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: kubeapps-internal-dashboard
+  labels:
+    app: kubeapps
+    chart: kubeapps-3.3.1
+    release: kubeapps
+    heritage: Tiller
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8080
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app: kubeapps-internal-dashboard
+    release: kubeapps
+
+---
+# Source: kubeapps/templates/apprepository-serviceaccount.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: kubeapps-internal-apprepository-controller
+  labels:
+    app: kubeapps-internal-apprepository-controller
+    chart: kubeapps-3.3.1
+    release: kubeapps
+    heritage: Tiller
+
+---
+# Source: kubeapps/templates/db-secret-bootstrap.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: kubeapps-mongodb
+  annotations:
+    helm.sh/hook: pre-install
+  labels:
+    chart: kubeapps-3.3.1
+    release: kubeapps
+    heritage: Tiller
+data:
+  mongodb-root-password: "M3NOeWRhSHdCcQ=="
 ---
 # Source: kubeapps/templates/kubeapps-frontend-config.yaml
 apiVersion: v1
@@ -98,7 +384,7 @@ metadata:
   name: kubeapps-frontend-config
   labels:
     app: kubeapps-frontend-config
-    chart: kubeapps-3.2.3
+    chart: kubeapps-3.3.1
     release: kubeapps
     heritage: Tiller
 data:
@@ -142,9 +428,9 @@ data:
         proxy_read_timeout 1h;
       }
 
-      location ~* /api/chartsvc {
-        rewrite /api/chartsvc/(.*) /chartsvc/$1 break;
-        rewrite /api/chartsvc /chartsvc break;
+      location ~* /api/assetsvc {
+        rewrite /api/assetsvc/(.*) /assetsvc/$1 break;
+        rewrite /api/assetsvc /assetsvc break;
 
         proxy_pass http://kubeapps-internal-tiller-proxy:8080;
       }
@@ -175,52 +461,6 @@ data:
     }
 
 ---
-# Source: kubeapps/templates/dashboard-service.yaml
-apiVersion: v1
-kind: Service
-metadata:
-  name: kubeapps-internal-dashboard
-  labels:
-    app: kubeapps
-    chart: kubeapps-3.2.3
-    release: kubeapps
-    heritage: Tiller
-spec:
-  type: ClusterIP
-  ports:
-    - port: 8080
-      targetPort: http
-      protocol: TCP
-      name: http
-  selector:
-    app: kubeapps-internal-dashboard
-    release: kubeapps
-
----
-# Source: kubeapps/templates/apprepository-crd.yaml
-# The condition above will be true if another instance of Kubeapps is
-# already installed
-apiVersion: apiextensions.k8s.io/v1beta1
-kind: CustomResourceDefinition
-metadata:
-  name: apprepositories.kubeapps.com
-  annotations:
-    "helm.sh/hook": crd-install
-  labels:
-    app: kubeapps-internal-apprepository-controller
-    chart: kubeapps-3.2.3
-    release: kubeapps
-    heritage: Tiller
-spec:
-  group: kubeapps.com
-  scope: Namespaced
-  names:
-    kind: AppRepository
-    plural: apprepositories
-    shortNames:
-      - apprepos
-  version: v1alpha1
----
 # Source: kubeapps/templates/tiller-proxy-rbac.yaml
 apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: Role
@@ -228,7 +468,7 @@ metadata:
   name: kubeapps-internal-tiller-proxy
   labels:
     app: kubeapps-internal-tiller-proxy
-    chart: kubeapps-3.2.3
+    chart: kubeapps-3.3.1
     release: kubeapps
     heritage: Tiller
 rules:
@@ -251,7 +491,7 @@ metadata:
   name: kubeapps-internal-tiller-proxy
   labels:
     app: kubeapps-internal-tiller-proxy
-    chart: kubeapps-3.2.3
+    chart: kubeapps-3.3.1
     release: kubeapps
     heritage: Tiller
 roleRef:
@@ -264,16 +504,74 @@ subjects:
     namespace: altemistahub
 
 ---
-# Source: kubeapps/templates/apprepository-serviceaccount.yaml
-apiVersion: v1
-kind: ServiceAccount
+# Source: kubeapps/templates/tiller-proxy-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
 metadata:
-  name: kubeapps-internal-apprepository-controller
+  name: kubeapps-internal-tiller-proxy
   labels:
-    app: kubeapps-internal-apprepository-controller
-    chart: kubeapps-3.2.3
+    app: kubeapps-internal-tiller-proxy
+    chart: kubeapps-3.3.1
     release: kubeapps
     heritage: Tiller
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: kubeapps-internal-tiller-proxy
+      release: kubeapps
+  template:
+    metadata:
+      labels:
+        app: kubeapps-internal-tiller-proxy
+        release: kubeapps
+    spec:
+      serviceAccountName: kubeapps-internal-tiller-proxy
+      # Increase termination timeout to let remaining operations to finish before killing the pods
+      # This is because new releases/upgrades/deletions are synchronous operations
+      terminationGracePeriodSeconds: 300      
+      securityContext:
+        fsGroup: 
+        runAsUser: 1001
+      containers:
+        - name: proxy
+          image: docker.io/bitnami/kubeapps-tiller-proxy:1.8.1-scratch-r0
+          command:
+            - /proxy
+          args:
+            - --host=tiller-deploy.kube-system:44134
+            - --user-agent-comment=kubeapps/v1.8.1
+            - --assetsvc-url=http://kubeapps-internal-assetsvc:8080
+          env:
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+          ports:
+            - name: http
+              containerPort: 8080
+          livenessProbe:
+            httpGet:
+              path: /live
+              port: 8080
+            initialDelaySeconds: 60
+            timeoutSeconds: 5
+            
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 8080
+            initialDelaySeconds: 0
+            timeoutSeconds: 5
+            
+          resources:
+            limits:
+              cpu: 250m
+              memory: 256Mi
+            requests:
+              cpu: 25m
+              memory: 32Mi
+            
 
 ---
 # Source: kubeapps/templates/dashboard-deployment.yaml
@@ -283,7 +581,7 @@ metadata:
   name: kubeapps-internal-dashboard
   labels:
     app: kubeapps-internal-dashboard
-    chart: kubeapps-3.2.3
+    chart: kubeapps-3.3.1
     release: kubeapps
     heritage: Tiller
 spec:
@@ -295,7 +593,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 80cfd68b14f4c0517d2b8734f86712b1b5e03828837fdec24d2a96e16c67368a
+        checksum/config: 5a3c88daeb118c8425cf7d03327785d2170312d30b60b654162e56f56260baf1
       labels:
         app: kubeapps-internal-dashboard
         release: kubeapps
@@ -305,7 +603,7 @@ spec:
         runAsUser: 1001
       containers:
         - name: dashboard
-          image: docker.io/bitnami/kubeapps-dashboard:1.7.2-debian-9-r4
+          image: docker.io/bitnami/kubeapps-dashboard:1.8.1-debian-10-r0
           livenessProbe:
             httpGet:
               path: /
@@ -352,298 +650,6 @@ spec:
                 path: config.json
 
 ---
-# Source: kubeapps/templates/ingress.yaml
-apiVersion: extensions/v1beta1
-kind: Ingress
-metadata:
-  name: kubeapps
-  labels: 
-    app: kubeapps
-    chart: kubeapps-3.2.3
-    release: kubeapps
-    heritage: Tiller
-  annotations:
-    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
-    nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
-spec:
-  rules:
-    - host: ${KUBEAPPS_HOSTNAME}
-      http:
-        paths:
-        - path: /
-          backend:
-            serviceName: kubeapps
-            servicePort: http
-    ## The block below is deprecated and must removed on 3.0.0
-    - host: kubeapps.local
-      http:
-        paths:
-        - path: /
-          backend:
-            serviceName: kubeapps
-            servicePort: http
-    ## end of block
-  tls:
-    ## The block below is deprecated and must removed on 3.0.0
-    ## end of block
-
----
-# Source: kubeapps/templates/chartsvc-deployment.yaml
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: kubeapps-internal-chartsvc
-  labels:
-    app: kubeapps-internal-chartsvc
-    chart: kubeapps-3.2.3
-    release: kubeapps
-    heritage: Tiller
-spec:
-  replicas: 2
-  selector:
-    matchLabels:
-      app: kubeapps-internal-chartsvc
-      release: kubeapps
-  template:
-    metadata:
-      labels:
-        app: kubeapps-internal-chartsvc
-        release: kubeapps
-    spec:      
-      securityContext:
-        fsGroup: 
-        runAsUser: 1001
-      containers:
-        - name: chartsvc
-          image: docker.io/bitnami/kubeapps-chartsvc:1.9.0-r0
-          command:
-            - /chartsvc
-          args:
-            - --mongo-user=root
-            - --mongo-url=kubeapps-mongodb
-          env:
-            - name: MONGO_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: kubeapps-mongodb
-                  key: mongodb-root-password
-          ports:
-            - name: http
-              containerPort: 8080
-          livenessProbe:
-            httpGet:
-              path: /live
-              port: 8080
-            initialDelaySeconds: 60
-            timeoutSeconds: 5
-            
-          readinessProbe:
-            httpGet:
-              path: /ready
-              port: 8080
-            initialDelaySeconds: 0
-            timeoutSeconds: 5
-            
-
----
-# Source: kubeapps/templates/tiller-proxy-serviceaccount.yaml
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: kubeapps-internal-tiller-proxy
-  labels:
-    app: kubeapps-internal-tiller-proxy
-    chart: kubeapps-3.2.3
-    release: kubeapps
-    heritage: Tiller
-
----
-# Source: kubeapps/templates/apprepository-rbac.yaml
-apiVersion: rbac.authorization.k8s.io/v1beta1
-kind: Role
-metadata:
-  name: kubeapps-internal-apprepository-controller
-  labels:
-    app: kubeapps-internal-apprepository-controller
-    chart: kubeapps-3.2.3
-    release: kubeapps
-    heritage: Tiller
-rules:
-  - apiGroups:
-      - ""
-    resources:
-      - events
-    verbs:
-      - create
-  - apiGroups:
-      - batch
-    resources:
-      - cronjobs
-    verbs:
-      - create
-      - get
-      - list
-      - update
-      - watch
-      - delete
-  - apiGroups:
-      - batch
-    resources:
-      - jobs
-    verbs:
-      - create
-  - apiGroups:
-      - kubeapps.com
-    resources:
-      - apprepositories
-      - apprepositories/finalizers
-    verbs:
-      - get
-      - list
-      - update
-      - watch
----
-apiVersion: rbac.authorization.k8s.io/v1beta1
-kind: RoleBinding
-metadata:
-  name: kubeapps-internal-apprepository-controller
-  labels:
-    app: kubeapps-internal-apprepository-controller
-    chart: kubeapps-3.2.3
-    release: kubeapps
-    heritage: Tiller
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: Role
-  name: kubeapps-internal-apprepository-controller
-subjects:
-  - kind: ServiceAccount
-    name: kubeapps-internal-apprepository-controller
-    namespace: altemistahub
----
-# Define role, but no binding, so users can be bound to this role
-apiVersion: rbac.authorization.k8s.io/v1beta1
-kind: Role
-metadata:
-  name: kubeapps-repositories-read
-rules:
-  - apiGroups:
-      - kubeapps.com
-    resources:
-      - apprepositories
-    verbs:
-      - list
-      - get
----
-# Define role, but no binding, so users can be bound to this role
-apiVersion: rbac.authorization.k8s.io/v1beta1
-kind: Role
-metadata:
-  name: kubeapps-repositories-write
-rules:
-  - apiGroups:
-      - kubeapps.com
-    resources:
-      - apprepositories
-    verbs:
-      - "*"
-  - apiGroups:
-      - ""
-    resources:
-      - secrets
-    verbs:
-      - create
----
-# Source: kubeapps/templates/chartsvc-service.yaml
-apiVersion: v1
-kind: Service
-metadata:
-  name: kubeapps-internal-chartsvc
-  labels:
-    app: kubeapps
-    chart: kubeapps-3.2.3
-    release: kubeapps
-    heritage: Tiller
-spec:
-  type: ClusterIP
-  ports:
-    - port: 8080
-      targetPort: http
-      protocol: TCP
-      name: http
-  selector:
-    app: kubeapps-internal-chartsvc
-    release: kubeapps
-
----
-# Source: kubeapps/templates/tiller-proxy-secret.yaml
-# The tls ca certificate is only required when tls.verify is set to true, we fail otherwise.
-
----
-# Source: kubeapps/templates/kubeapps-frontend-deployment.yaml
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: kubeapps
-  labels:
-    app: kubeapps
-    chart: kubeapps-3.2.3
-    release: kubeapps
-    heritage: Tiller
-spec:
-  replicas: 2
-  selector:
-    matchLabels:
-      app: kubeapps
-      release: kubeapps
-  template:
-    metadata:
-      annotations:
-        checksum/config: a8947cfab490b045fb47ad419e12a8092e6dc72f0ee97a98662cd1140a8a3637
-      labels:
-        app: kubeapps
-        release: kubeapps
-    spec:      
-      securityContext:
-        fsGroup: 
-        runAsUser: 1001
-      containers:
-        - name: nginx
-          image: docker.io/bitnami/nginx:1.16.1-debian-9-r52
-          livenessProbe:
-            httpGet:
-              path: /healthz
-              port: 8080
-            initialDelaySeconds: 60
-            timeoutSeconds: 5
-            
-          readinessProbe:
-            httpGet:
-              path: /
-              port: 8080
-            initialDelaySeconds: 0
-            timeoutSeconds: 5
-            
-          volumeMounts:
-            - name: vhost
-              mountPath: /opt/bitnami/nginx/conf/server_blocks
-          ports:
-            - name: http
-              containerPort: 8080
-          resources:
-            limits:
-              cpu: 250m
-              memory: 128Mi
-            requests:
-              cpu: 25m
-              memory: 32Mi
-            
-      volumes:
-        - name: vhost
-          configMap:
-            name: kubeapps-frontend-config
-
----
 # Source: kubeapps/templates/apprepository-deployment.yaml
 apiVersion: apps/v1
 kind: Deployment
@@ -651,7 +657,7 @@ metadata:
   name: kubeapps-internal-apprepository-controller
   labels:
     app: kubeapps-internal-apprepository-controller
-    chart: kubeapps-3.2.3
+    chart: kubeapps-3.3.1
     release: kubeapps
     heritage: Tiller
 spec:
@@ -672,16 +678,20 @@ spec:
         runAsUser: 1001
       containers:
         - name: controller
-          image: docker.io/bitnami/kubeapps-apprepository-controller:1.7.2-scratch-r0
+          image: docker.io/bitnami/kubeapps-apprepository-controller:1.8.1-scratch-r0
           command:
             - /apprepository-controller
           args:
-            - --logtostderr
-            - --user-agent-comment=kubeapps/v1.7.2
-            - --repo-sync-image=docker.io/bitnami/kubeapps-chart-repo:1.9.0-r2
+            - --user-agent-comment=kubeapps/v1.8.1
+            - --repo-sync-image=docker.io/bitnami/kubeapps-asset-syncer:1.8.1-scratch-r0
+            - --repo-sync-cmd=/asset-syncer
             - --namespace=altemistahub
-            - --mongo-url=kubeapps-mongodb
-            - --mongo-secret-name=kubeapps-mongodb
+            - --database-secret-name=kubeapps-mongodb
+            - --database-secret-key=mongodb-root-password
+            - --database-type=mongodb
+            - --database-url=kubeapps-mongodb
+            - --database-user=root
+            - --database-name=charts
           resources:
             limits:
               cpu: 250m
@@ -692,42 +702,6 @@ spec:
             
 
 ---
-# Source: kubeapps/templates/mongodb-secret-bootstrap.yaml
-apiVersion: v1
-kind: Secret
-metadata:
-  name: kubeapps-mongodb
-  annotations:
-    helm.sh/hook: pre-install
-  labels:
-    chart: kubeapps-3.2.3
-    release: kubeapps
-    heritage: Tiller
-data:
-  mongodb-root-password: "NGhxTHk2NUxxYQ=="
----
-# Source: kubeapps/templates/kubeapps-frontend-service.yaml
-apiVersion: v1
-kind: Service
-metadata:
-  name: kubeapps
-  labels:
-    app: kubeapps
-    chart: kubeapps-3.2.3
-    release: kubeapps
-    heritage: Tiller
-spec:
-  type: ClusterIP
-  ports:
-    - port: 80
-      targetPort: http
-      protocol: TCP
-      name: http
-  selector:
-    app: kubeapps
-    release: kubeapps
-
----
 # Source: kubeapps/templates/dashboard-config.yaml
 apiVersion: v1
 kind: ConfigMap
@@ -735,7 +709,7 @@ metadata:
   name: kubeapps-internal-dashboard-config
   labels:
     app: kubeapps-internal-dashboard-config
-    chart: kubeapps-3.2.3
+    chart: kubeapps-3.3.1
     release: kubeapps
     heritage: Tiller
 data:
@@ -771,11 +745,55 @@ data:
   config.json: |-
     {
       "namespace": "altemistahub",
-      "appVersion": "v1.7.2",
+      "appVersion": "v1.8.1",
       "authProxyEnabled": false,
       "oauthLoginURI": "/oauth2/start",
       "oauthLogoutURI": "/oauth2/sign_out"
     }
+
+---
+# Source: kubeapps/templates/assetsvc-service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: kubeapps-internal-assetsvc
+  labels:
+    app: kubeapps
+    chart: kubeapps-3.3.1
+    release: kubeapps
+    heritage: Tiller
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8080
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app: kubeapps-internal-assetsvc
+    release: kubeapps
+
+---
+# Source: kubeapps/charts/mongodb/templates/svc-standalone.yaml
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: kubeapps-mongodb
+  labels:
+    app: mongodb
+    chart: mongodb-7.6.1
+    release: "kubeapps"
+    heritage: "Tiller"
+spec:
+  type: ClusterIP
+  ports:
+  - name: mongodb
+    port: 27017
+    targetPort: mongodb
+  selector:
+    app: mongodb
+    release: "kubeapps"
 
 ---
 # Source: kubeapps/charts/mongodb/templates/deployment-standalone.yaml
@@ -786,7 +804,7 @@ metadata:
   name: kubeapps-mongodb
   labels:
     app: mongodb
-    chart: mongodb-7.2.9
+    chart: mongodb-7.6.1
     release: "kubeapps"
     heritage: "Tiller"
 spec:
@@ -799,12 +817,12 @@ spec:
       labels:
         app: mongodb
         release: "kubeapps"
-        chart: mongodb-7.2.9
+        chart: mongodb-7.6.1
     spec:      
       initContainers:
       containers:
       - name: kubeapps-mongodb
-        image: docker.io/bitnami/mongodb:4.0.12-debian-9-r43
+        image: docker.io/bitnami/mongodb:4.0.14-debian-9-r0
         imagePullPolicy: "IfNotPresent"
         env:
         - name: MONGODB_ROOT_PASSWORD
@@ -860,25 +878,3 @@ spec:
       volumes:
       - name: data
         emptyDir: {}
----
-# Source: kubeapps/charts/mongodb/templates/svc-standalone.yaml
-
-apiVersion: v1
-kind: Service
-metadata:
-  name: kubeapps-mongodb
-  labels:
-    app: mongodb
-    chart: mongodb-7.2.9
-    release: "kubeapps"
-    heritage: "Tiller"
-spec:
-  type: ClusterIP
-  ports:
-  - name: mongodb
-    port: 27017
-    targetPort: mongodb
-  selector:
-    app: mongodb
-    release: "kubeapps"
-
