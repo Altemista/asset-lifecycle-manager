@@ -1,27 +1,4 @@
 ---
-# Source: kubeapps/templates/tests/test-chartsvc.yaml
-apiVersion: v1
-kind: Pod
-metadata:
-  name: "kubeapps-chartsvc-test"
-  annotations:
-    "helm.sh/hook": test-success
-spec:
-  containers:
-    - name: kubeapps-chartsvc-test
-      image: bitnami/nginx:1.16.1-debian-9-r52
-      env:
-        - name: CHARTSVC_HOST
-          value: kubeapps-internal-chartsvc.altemistahub
-        - name: CHARTSVC_PORT
-          value: "8080"
-      command:
-        - sh
-        - -c
-        - curl -o /tmp/output $CHARTSVC_HOST:$CHARTSVC_PORT/v1/charts && cat /tmp/output && cat /tmp/output | grep wordpress
-  restartPolicy: Never
-
----
 # Source: kubeapps/templates/tests/test-dashboard.yaml
 apiVersion: v1
 kind: Pod
@@ -40,6 +17,29 @@ spec:
         - sh
         - -c
         - curl -o /tmp/output $DASHBOARD_HOST && cat /tmp/output && cat /tmp/output | grep 'You need to enable JavaScript to run this app'
+  restartPolicy: Never
+
+---
+# Source: kubeapps/templates/tests/test-assetsvc.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "kubeapps-assetsvc-test"
+  annotations:
+    "helm.sh/hook": test-success
+spec:
+  containers:
+    - name: kubeapps-assetsvc-test
+      image: bitnami/nginx:1.16.1-debian-9-r52
+      env:
+        - name: ASSETSVC_HOST
+          value: kubeapps-internal-assetsvc.altemistahub
+        - name: ASSETSVC_PORT
+          value: "8080"
+      command:
+        - sh
+        - -c
+        - curl -o /tmp/output $ASSETSVC_HOST:$ASSETSVC_PORT/v1/charts && cat /tmp/output && cat /tmp/output | grep wordpress
   restartPolicy: Never
 
 ---
