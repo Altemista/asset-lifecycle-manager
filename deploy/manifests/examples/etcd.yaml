@@ -1,0 +1,18 @@
+apiVersion: aalm.altemista.com/v1alpha1
+kind: OperatedAsset
+metadata:
+  name: example-operatedasset
+spec:
+  operator:
+    channel: singlenamespace-alpha
+    name: etcd
+    source: operatorhubio-catalog
+    sourceNamespace: olm
+  asset:
+    apiVersion: etcd.database.coreos.com/v1beta2
+    kind: EtcdCluster
+    metadata:
+      name: example
+    spec:
+      size: 3
+      version: 3.2.13

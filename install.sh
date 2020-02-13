@@ -164,15 +164,16 @@ install_olm() {
   curl -fsSL https://github.com/operator-framework/operator-lifecycle-manager/releases/latest/download/install.sh | bash -s ${olm_version}
 }
 
-install_altemista_operator_registry() {
-  echo "Installing altemista operator registry..."
-  curl -fsSL ${url}/aolm.yaml | kubectl apply -f -
+install_altemista_asset_lifecycle_manager() {
+  echo "Installing Altemista asset lifecycle manager..."
+  curl -fsSL ${url}/aalm-crds.yaml | kubectl apply -f -
+  curl -fsSL ${url}/aalm.yaml | kubectl apply -f -
 }
 
 install() {
   parse_commandline "$@"
   install_olm
-  install_altemista_operator_registry
+  install_altemista_asset_lifecycle_manager
   if [ "$_arg_with_kubeapps" == "on" ]; then
     install_kubeapps
   fi

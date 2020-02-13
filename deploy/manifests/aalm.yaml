@@ -1,0 +1,113 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: altemistahub
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: aalm
+---
+apiVersion: operators.coreos.com/v1alpha1
+kind: CatalogSource
+metadata:
+  name: altemista-operators
+  namespace: olm
+spec:
+  sourceType: grpc
+  image: eu.gcr.io/coealtemista/altemista-operators:latest
+  displayName: Altemista Operators
+  publisher: Altemista
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: aalm-operator
+  namespace: aalm
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: system:controller:altemista-asset-lifecycle-manager
+rules:
+- apiGroups:
+  - '*'
+  resources:
+  - '*'
+  verbs:
+  - '*'
+- nonResourceURLs:
+  - '*'
+  verbs:
+  - '*'
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: aalm-operator
+subjects:
+- kind: ServiceAccount
+  name: aalm-operator
+  namespace: aalm
+roleRef:
+  kind: ClusterRole
+  name: system:controller:altemista-asset-lifecycle-manager
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aalm-operator
+  namespace: aalm
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: aalm-operator
+  template:
+    metadata:
+      labels:
+        name: aalm-operator
+    spec:
+      serviceAccountName: aalm-operator
+      containers:
+        - name: aalm-operator
+          image: eu.gcr.io/coealtemista/aalm-operator
+          command:
+          - aalm-operator
+          imagePullPolicy: Always
+          env:
+            - name: WATCH_NAMESPACE
+              value: ""
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: OPERATOR_NAME
+              value: "aalm-operator"
+---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: aggregate-aalm-edit
+  labels:
+    rbac.authorization.k8s.io/aggregate-to-admin: "true"
+    rbac.authorization.k8s.io/aggregate-to-edit: "true"
+rules:
+- apiGroups: ["aalm.altemista.com"]
+  resources: ["operatedasset"]
+  verbs: ["create", "update", "patch", "delete"]
+---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: aggregate-aalm-view
+  labels:
+    rbac.authorization.k8s.io/aggregate-to-admin: "true"
+    rbac.authorization.k8s.io/aggregate-to-edit: "true"
+    rbac.authorization.k8s.io/aggregate-to-view: "true"
+rules:
+- apiGroups: ["aalm.altemista.com"]
+  resources: ["operatedasset"]
+  verbs: ["get", "list", "watch"]

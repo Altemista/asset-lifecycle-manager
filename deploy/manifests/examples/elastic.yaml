@@ -1,0 +1,41 @@
+apiVersion: aalm.altemista.com/v1alpha1
+kind: OperatedAsset
+metadata:
+  name: example-elastic
+spec:
+  operator:
+    channel: stable
+    name: elastic-cloud-eck
+    source: operatorhubio-catalog
+    sourceNamespace: olm
+  asset:
+    apiVersion: elasticsearch.k8s.elastic.co/v1
+    kind: Elasticsearch
+    metadata:
+      name: example-elastic
+      annotations:
+        common.k8s.elastic.co/controller-version: 1.0.0
+    spec:
+      version: 7.5.1
+      nodeSets:
+        - name: default
+          config:
+            node.master: true
+            node.data: true
+            node.attr.attr_name: attr_value
+            node.store.allow_mmap: false
+          podTemplate:
+            metadata:
+              labels:
+                foo: bar
+            spec:
+              containers:
+                - name: elasticsearch
+                  resources:
+                    requests:
+                      memory: 1Gi
+                      cpu: 1
+                    limits:
+                      memory: 1Gi
+                      cpu: 1
+          count: 1
