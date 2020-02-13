@@ -96,7 +96,7 @@ metadata:
     rbac.authorization.k8s.io/aggregate-to-edit: "true"
 rules:
 - apiGroups: ["aalm.altemista.com"]
-  resources: ["operatedasset"]
+  resources: ["operatedassets"]
   verbs: ["create", "update", "patch", "delete"]
 ---
 kind: ClusterRole
@@ -109,5 +109,5 @@ metadata:
     rbac.authorization.k8s.io/aggregate-to-view: "true"
 rules:
 - apiGroups: ["aalm.altemista.com"]
-  resources: ["operatedasset"]
+  resources: ["operatedassets"]
   verbs: ["get", "list", "watch"]
