@@ -152,7 +152,7 @@ install_kubeapps() {
 install_harbor() {
   echo "Installing harbor..."
   harbor_admin_password_key=$(echo -n '${HARBOR_ADMIN_PASSWORD}' | base64)
-  harbor_admin_password="$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 20 | head -n 1 | tr -d '\n')"
+  harbor_admin_password="$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 20 | head -n 1 | tr -d '\n' | base64)"
   curl -fsSL ${url}/harbor.yaml \
   | sed -e "s|\${HARBOR_HOSTNAME}|${_arg_harbor_hostname}|g" \
         -e "s/${harbor_admin_password_key}/${harbor_admin_password}/g" \
