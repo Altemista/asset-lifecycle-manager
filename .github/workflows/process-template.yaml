@@ -3,7 +3,6 @@ on:
     branches:
       - master
     paths:
-      - '.github/workflows/*'
       - 'deploy/templates/**'
 name: Process template and push
 jobs:

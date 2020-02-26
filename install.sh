@@ -161,7 +161,8 @@ install_harbor() {
 
 install_olm() {
   echo "Installing olm..."
-  curl -fsSL https://github.com/operator-framework/operator-lifecycle-manager/releases/latest/download/install.sh | bash -s ${olm_version}
+  (curl -fsSL https://github.com/operator-framework/operator-lifecycle-manager/releases/latest/download/install.sh | bash -s ${olm_version} 2> /dev/null  \
+  || curl -fsSL ${url}/install-olm-fallback.sh | bash -s ${olm_version})
 }
 
 install_altemista_asset_lifecycle_manager() {
