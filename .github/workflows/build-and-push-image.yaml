@@ -6,7 +6,7 @@ on:
       - .github/**
       - 'deploy/**'
       - 'docs/**'
-      - 'install.sh'
+      - 'install*.sh'
       - '*.md'
 name: Build and push operator image
 jobs:
