@@ -25,6 +25,7 @@ jobs:
             ```
           draft: true
           prerelease: false
+
       - name: Upload aalm-crds.yaml to release
         uses: actions/upload-release-asset@v1.0.1
         env:
@@ -34,6 +35,7 @@ jobs:
           asset_path: deploy/manifests/aalm-crds.yaml
           asset_name: aalm-crds.yaml
           asset_content_type: text/plain
+
       - name: Upload aalm.yaml to release
         uses: actions/upload-release-asset@v1.0.1
         env:
