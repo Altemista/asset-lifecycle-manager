@@ -20,6 +20,8 @@ More information can be found [here](https://github.com/operator-framework/opera
 ### AALM
 Altemista OLM to manage Altemista operators. This image it is installed via `CatalogSource`. It is always installed because contains all the information to install and manage Altemista Assets.
 
+More information can be found [here](docs/design/architecture.md).
+
 ### KUBEAPPS
 UI that shows all Altemista Assets (when installed) and (optional) harbor private assets and allows to install those assets in the private catalog.
 
