@@ -10,6 +10,7 @@ metadata:
     release: kubeapps
     heritage: Tiller
   annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
     nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
     nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
 spec:
@@ -21,6 +22,10 @@ spec:
           backend:
             serviceName: kubeapps
             servicePort: http
+  tls:
+    - hosts:
+      - ${KUBEAPPS_HOSTNAME}
+      secretName: kubeapps-tls
     ## The block below is deprecated and must removed on 3.0.0
     ## end of block
 
