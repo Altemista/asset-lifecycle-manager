@@ -1,7 +1,9 @@
+useHelm3: true
+
 apprepository:
   initialRepos:
   - name: altemista
-    url: https://core.harbor.apps.altemista.35.242.157.252.nip.io/chartrepo/library
+    url: https://core.harbor.altemista.cloud/chartrepo/library
   - name: organization
     url: http://harbor-harbor-core/chartrepo/library
 
@@ -10,11 +12,11 @@ ingress:
   hostname: ${KUBEAPPS_HOSTNAME}
 
   annotations:
+#    kubernetes.io/ingress.class: nginx
     nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
     nginx.ingress.kubernetes.io/force-ssl-redirect: true
-#    kubernetes.io/ingress.class: nginx
-#    cert-manager.io/cluster-issuer: letsencrypt-staging
-  tls: false
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+  tls: true
 
 securityContext:
   enabled: true
