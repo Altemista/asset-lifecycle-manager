@@ -1,18 +1,37 @@
 ---
-# Source: kubeapps/templates/db-secret-jobs-cleanup-serviceaccount.yaml
-apiVersion: v1
-kind: ServiceAccount
+# Source: kubeapps/templates/db-secret-jobs-cleanup.yaml
+apiVersion: batch/v1
+kind: Job
 metadata:
   name: kubeapps-internal-db-secret-jobs-cleanup
   annotations:
     helm.sh/hook: post-delete
     helm.sh/hook-delete-policy: hook-succeeded
-    helm.sh/hook-weight: "-10"
   labels:
     app: kubeapps-internal-db-secret-jobs-cleanup
-    chart: kubeapps-3.3.1
+    chart: kubeapps-3.4.3
     release: kubeapps
     heritage: Tiller
+spec:
+  template:
+    metadata:
+      labels:
+        app: kubeapps-internal-db-secret-jobs-cleanup
+        release: kubeapps
+    spec:      
+      securityContext:
+        fsGroup: 
+        runAsUser: 1001
+      restartPolicy: OnFailure
+      serviceAccountName: kubeapps-internal-db-secret-jobs-cleanup
+      containers:
+        - name: kubectl
+          image: docker.io/bitnami/kubectl:1.16.3-r17
+          command:
+            - /bin/sh
+          args:
+            - -c
+            - "kubectl delete secret -n altemistahub kubeapps-mongodb kubeapps-db|| true"
 
 ---
 # Source: kubeapps/templates/apprepository-jobs-cleanup-serviceaccount.yaml
@@ -26,10 +45,106 @@ metadata:
     helm.sh/hook-weight: "-10"
   labels:
     app: kubeapps-internal-apprepository-jobs-cleanup
-    chart: kubeapps-3.3.1
+    chart: kubeapps-3.4.3
     release: kubeapps
     heritage: Tiller
 
+---
+# Source: kubeapps/templates/apprepository-jobs-cleanup-rbac.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: kubeapps-internal-apprepository-jobs-cleanup
+  annotations:
+    helm.sh/hook: post-delete
+    helm.sh/hook-delete-policy: hook-succeeded
+    helm.sh/hook-weight: "-10"
+  labels:
+    app: kubeapps-internal-apprepository-jobs-cleanup
+    chart: kubeapps-3.4.3
+    release: kubeapps
+    heritage: Tiller
+rules:
+  - apiGroups:
+      - kubeapps.com
+    resources:
+      - apprepositories
+    verbs:
+      - list
+      - delete
+  - apiGroups:
+      - ""
+    resources:
+      - secrets
+    verbs:
+      - list
+      - delete
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kubeapps-internal-apprepository-jobs-cleanup
+  annotations:
+    helm.sh/hook: post-delete
+    helm.sh/hook-delete-policy: hook-succeeded
+    helm.sh/hook-weight: "-10"
+  labels:
+    app: kubeapps-internal-apprepository-jobs-cleanup
+    chart: kubeapps-3.4.3
+    release: kubeapps
+    heritage: Tiller
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: kubeapps-internal-apprepository-jobs-cleanup
+subjects:
+  - kind: ServiceAccount
+    name: kubeapps-internal-apprepository-jobs-cleanup
+    namespace: altemistahub
+---
+# Source: kubeapps/templates/db-secret-cleanup-rbac.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: kubeapps-internal-db-secret-jobs-cleanup
+  annotations:
+    helm.sh/hook: post-delete
+    helm.sh/hook-delete-policy: hook-succeeded
+    helm.sh/hook-weight: "-10"
+  labels:
+    app: kubeapps-internal-db-secret-jobs-cleanup
+    chart: kubeapps-3.4.3
+    release: kubeapps
+    heritage: Tiller
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - secrets
+    verbs:
+      - delete
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kubeapps-internal-db-secret-jobs-cleanup
+  annotations:
+    helm.sh/hook: post-delete
+    helm.sh/hook-delete-policy: hook-succeeded
+    helm.sh/hook-weight: "-10"
+  labels:
+    app: kubeapps-internal-db-secret-jobs-cleanup
+    chart: kubeapps-3.4.3
+    release: kubeapps
+    heritage: Tiller
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: kubeapps-internal-db-secret-jobs-cleanup
+subjects:
+  - kind: ServiceAccount
+    name: kubeapps-internal-db-secret-jobs-cleanup
+    namespace: altemistahub
 ---
 # Source: kubeapps/templates/apprepository-jobs-cleanup.yaml
 # Clean up the AppRepository resources used by this Kubeapps instance
@@ -42,7 +157,7 @@ metadata:
     helm.sh/hook-delete-policy: hook-succeeded
   labels:
     app: kubeapps-internal-apprepository-jobs-cleanup
-    chart: kubeapps-3.3.1
+    chart: kubeapps-3.4.3
     release: kubeapps
     heritage: Tiller
 spec:
@@ -69,9 +184,9 @@ spec:
               kubectl delete secrets -n altemistahub -l app=kubeapps,release=kubeapps
 
 ---
-# Source: kubeapps/templates/db-secret-cleanup-rbac.yaml
-apiVersion: rbac.authorization.k8s.io/v1beta1
-kind: Role
+# Source: kubeapps/templates/db-secret-jobs-cleanup-serviceaccount.yaml
+apiVersion: v1
+kind: ServiceAccount
 metadata:
   name: kubeapps-internal-db-secret-jobs-cleanup
   annotations:
@@ -80,122 +195,7 @@ metadata:
     helm.sh/hook-weight: "-10"
   labels:
     app: kubeapps-internal-db-secret-jobs-cleanup
-    chart: kubeapps-3.3.1
+    chart: kubeapps-3.4.3
     release: kubeapps
     heritage: Tiller
-rules:
-  - apiGroups:
-      - ""
-    resources:
-      - secrets
-    verbs:
-      - delete
----
-apiVersion: rbac.authorization.k8s.io/v1beta1
-kind: RoleBinding
-metadata:
-  name: kubeapps-internal-db-secret-jobs-cleanup
-  annotations:
-    helm.sh/hook: post-delete
-    helm.sh/hook-delete-policy: hook-succeeded
-    helm.sh/hook-weight: "-10"
-  labels:
-    app: kubeapps-internal-db-secret-jobs-cleanup
-    chart: kubeapps-3.3.1
-    release: kubeapps
-    heritage: Tiller
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: Role
-  name: kubeapps-internal-db-secret-jobs-cleanup
-subjects:
-  - kind: ServiceAccount
-    name: kubeapps-internal-db-secret-jobs-cleanup
-    namespace: altemistahub
----
-# Source: kubeapps/templates/db-secret-jobs-cleanup.yaml
-apiVersion: batch/v1
-kind: Job
-metadata:
-  name: kubeapps-internal-db-secret-jobs-cleanup
-  annotations:
-    helm.sh/hook: post-delete
-    helm.sh/hook-delete-policy: hook-succeeded
-  labels:
-    app: kubeapps-internal-db-secret-jobs-cleanup
-    chart: kubeapps-3.3.1
-    release: kubeapps
-    heritage: Tiller
-spec:
-  template:
-    metadata:
-      labels:
-        app: kubeapps-internal-db-secret-jobs-cleanup
-        release: kubeapps
-    spec:      
-      securityContext:
-        fsGroup: 
-        runAsUser: 1001
-      restartPolicy: OnFailure
-      serviceAccountName: kubeapps-internal-db-secret-jobs-cleanup
-      containers:
-        - name: kubectl
-          image: docker.io/bitnami/kubectl:1.16.3-r17
-          command:
-            - /bin/sh
-          args:
-            - -c
-            - "kubectl delete secret -n altemistahub kubeapps-mongodb kubeapps-db|| true"
 
----
-# Source: kubeapps/templates/apprepository-jobs-cleanup-rbac.yaml
-apiVersion: rbac.authorization.k8s.io/v1beta1
-kind: Role
-metadata:
-  name: kubeapps-internal-apprepository-jobs-cleanup
-  annotations:
-    helm.sh/hook: post-delete
-    helm.sh/hook-delete-policy: hook-succeeded
-    helm.sh/hook-weight: "-10"
-  labels:
-    app: kubeapps-internal-apprepository-jobs-cleanup
-    chart: kubeapps-3.3.1
-    release: kubeapps
-    heritage: Tiller
-rules:
-  - apiGroups:
-      - kubeapps.com
-    resources:
-      - apprepositories
-    verbs:
-      - list
-      - delete
-  - apiGroups:
-      - ""
-    resources:
-      - secrets
-    verbs:
-      - list
-      - delete
----
-apiVersion: rbac.authorization.k8s.io/v1beta1
-kind: RoleBinding
-metadata:
-  name: kubeapps-internal-apprepository-jobs-cleanup
-  annotations:
-    helm.sh/hook: post-delete
-    helm.sh/hook-delete-policy: hook-succeeded
-    helm.sh/hook-weight: "-10"
-  labels:
-    app: kubeapps-internal-apprepository-jobs-cleanup
-    chart: kubeapps-3.3.1
-    release: kubeapps
-    heritage: Tiller
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: Role
-  name: kubeapps-internal-apprepository-jobs-cleanup
-subjects:
-  - kind: ServiceAccount
-    name: kubeapps-internal-apprepository-jobs-cleanup
-    namespace: altemistahub

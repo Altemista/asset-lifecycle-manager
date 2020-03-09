@@ -9,12 +9,12 @@ metadata:
     "helm.sh/hook": pre-install
   labels:
     app: kubeapps-internal-apprepository-controller
-    chart: kubeapps-3.3.1
+    chart: kubeapps-3.4.3
     release: kubeapps
     heritage: Tiller
 spec:
   type: helm
-  url: https://core.harbor.apps.altemista.35.242.157.252.nip.io/chartrepo/library
+  url: https://core.harbor.altemista.cloud/chartrepo/library
   syncJobPodTemplate:
     spec:
       securityContext:
@@ -29,7 +29,7 @@ metadata:
     "helm.sh/hook": pre-install
   labels:
     app: kubeapps-internal-apprepository-controller
-    chart: kubeapps-3.3.1
+    chart: kubeapps-3.4.3
     release: kubeapps
     heritage: Tiller
 spec:

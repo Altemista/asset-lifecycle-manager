@@ -1,25 +1,4 @@
 ---
-# Source: kubeapps/templates/tests/test-dashboard.yaml
-apiVersion: v1
-kind: Pod
-metadata:
-  name: "kubeapps-dashboard-test"
-  annotations:
-    "helm.sh/hook": test-success
-spec:
-  containers:
-    - name: kubeapps-dashboard-test
-      image: bitnami/nginx:1.16.1-debian-9-r52
-      env:
-        - name: DASHBOARD_HOST
-          value: kubeapps.altemistahub
-      command:
-        - sh
-        - -c
-        - curl -o /tmp/output $DASHBOARD_HOST && cat /tmp/output && cat /tmp/output | grep 'You need to enable JavaScript to run this app'
-  restartPolicy: Never
-
----
 # Source: kubeapps/templates/tests/test-assetsvc.yaml
 apiVersion: v1
 kind: Pod
@@ -30,7 +9,7 @@ metadata:
 spec:
   containers:
     - name: kubeapps-assetsvc-test
-      image: bitnami/nginx:1.16.1-debian-9-r52
+      image: bitnami/nginx:1.16.1-debian-10-r27
       env:
         - name: ASSETSVC_HOST
           value: kubeapps-internal-assetsvc.altemistahub
@@ -43,27 +22,23 @@ spec:
   restartPolicy: Never
 
 ---
-# Source: kubeapps/templates/tests/test-tiller-proxy.yaml
+# Source: kubeapps/templates/tests/test-dashboard.yaml
 apiVersion: v1
 kind: Pod
 metadata:
-  name: "kubeapps-tiller-proxy-test"
+  name: "kubeapps-dashboard-test"
   annotations:
     "helm.sh/hook": test-success
 spec:
   containers:
-    - name: kubeapps-tiller-proxy-test
-      image: bitnami/nginx:1.16.1-debian-9-r52
+    - name: kubeapps-dashboard-test
+      image: bitnami/nginx:1.16.1-debian-10-r27
       env:
-        - name: TILLER_PROXY_HOST
-          value: kubeapps-internal-tiller-proxy.altemistahub
-        - name: TILLER_PROXY_PORT
-          value: "8080"
-        - name: KUBEAPPS_RELEASE
-          value: kubeapps
+        - name: DASHBOARD_HOST
+          value: kubeapps.altemistahub
       command:
         - sh
         - -c
-        - "curl -o /tmp/output -ik -H \"Authorization: Bearer $(cat /var/run/secrets/kubernetes.io/serviceaccount/token)\" $TILLER_PROXY_HOST:$TILLER_PROXY_PORT/v1/releases && cat /tmp/output && cat /tmp/output | grep $KUBEAPPS_RELEASE"
+        - curl -o /tmp/output $DASHBOARD_HOST && cat /tmp/output && cat /tmp/output | grep 'You need to enable JavaScript to run this app'
   restartPolicy: Never
 
