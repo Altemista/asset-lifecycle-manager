@@ -14,7 +14,7 @@ metadata:
     heritage: Tiller
 spec:
   type: helm
-  url: https://core.harbor.altemista.cloud/chartrepo/library
+  url: https://core.testharbor.altemista.cloud/chartrepo/library
   syncJobPodTemplate:
     spec:
       securityContext:
