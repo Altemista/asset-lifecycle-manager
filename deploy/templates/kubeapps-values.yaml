@@ -3,7 +3,7 @@ useHelm3: true
 apprepository:
   initialRepos:
   - name: altemista
-    url: https://core.harbor.altemista.cloud/chartrepo/library
+    url: https://core.testharbor.altemista.cloud/chartrepo/library
   - name: organization
     url: http://harbor-harbor-core/chartrepo/library
 
