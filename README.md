@@ -13,12 +13,14 @@ Follow the steps in the [installation guide](docs/install-alm.md) to learn how t
 ## Components
 
 ### OLM
-Operator lifecycle manager to manage new installed operators from Operator hub. It is always installed to be able to use the OLM CRs and operators.
+Operator lifecycle manager to manage new Altemista operators from Operator hub managed with a `CatalogSource`. The `CatalogSource` points to the latest image of the Altemista operators `eu.gcr.io/coealtemista/aalm-operator:latest`. It is always installed to be able to use the OLM CRs and operators.
 
 More information can be found [here](https://github.com/operator-framework/operator-lifecycle-manager).
 
 ### AALM
-Altemista OLM to manage Altemista operators. This image it is installed via `CatalogSource`. It is always installed because contains all the information to install and manage Altemista Assets.
+Altemista Asset Lifecycle Manager that manages Altemista Operated Assets. It is installed always and it will provide the main functionalities of this project:
+- Allows users to consume operators and operated instances without privileges.
+- Manage operators and operated instances from the `OperatedAsset` Custom Resource.
 
 More information can be found [here](docs/design/architecture.md).
 

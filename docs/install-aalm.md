@@ -1,4 +1,8 @@
-# Install the Altemista Lifecycle Manager
+# Install the Altemista Asset Lifecycle Manager
+AALM can be installed with a simple bash script that applies the latest manifests to your Kubernetes Cluster.
+
+In order to generate those manifests, one GitHub Action [process template](design/cicd.md#Process_Template) is used. Other manifests are directly configured as CRDs or AALM base resources as `Namespace`, `ServiceAccount` or `CatalogSource`.
+
 ## Usage
 This command uses your `KUBECONFIG` environment variable to connect to your Kubernetes. You can configure your installation with the following options:
 
