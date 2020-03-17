@@ -35,3 +35,6 @@ More information can be found [here](https://github.com/kubeapps/kubeapps).
 It provides different funcionalities but it is used as Chart repository to store private HELM Charts that can be installed from Kubeapps. When installed, Kubeapps automatically shows the HELM charts from this Chart repository.
 
 More information can be found [here](https://github.com/goharbor/harbor).
+
+## HOW TO CONTRIBUTE
+Check out [this document](docs/CONTRIBUTING.md).
