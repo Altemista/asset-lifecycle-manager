@@ -6,15 +6,19 @@ kind: AppRepository
 metadata:
   name: altemista
   annotations:
-    "helm.sh/hook": pre-install
+    "helm.sh/hook": post-install
   labels:
-    app: kubeapps-internal-apprepository-controller
-    chart: kubeapps-3.4.3
+    chart: kubeapps-3.9.2
     release: kubeapps
     heritage: Tiller
+    helm.sh/chart: kubeapps-3.9.2
+    app.kubernetes.io/instance: kubeapps
+    app.kubernetes.io/managed-by: Tiller
+    app.kubernetes.io/name: kubeapps
+    app: kubeapps-internal-apprepository-controller
 spec:
   type: helm
-  url: https://core.testharbor.altemista.cloud/chartrepo/library
+  url: https://core.harbor.altemista.cloud/chartrepo/library
   syncJobPodTemplate:
     spec:
       securityContext:
@@ -26,12 +30,16 @@ kind: AppRepository
 metadata:
   name: organization
   annotations:
-    "helm.sh/hook": pre-install
+    "helm.sh/hook": post-install
   labels:
-    app: kubeapps-internal-apprepository-controller
-    chart: kubeapps-3.4.3
+    chart: kubeapps-3.9.2
     release: kubeapps
     heritage: Tiller
+    helm.sh/chart: kubeapps-3.9.2
+    app.kubernetes.io/instance: kubeapps
+    app.kubernetes.io/managed-by: Tiller
+    app.kubernetes.io/name: kubeapps
+    app: kubeapps-internal-apprepository-controller
 spec:
   type: helm
   url: http://harbor-harbor-core/chartrepo/library
