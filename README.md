@@ -8,7 +8,7 @@ It also enforces some constraints on the components it manages in order to ensur
 All the components are installed in the `altemistahub` namespace.
 
 ## Installation
-Follow the steps in the [installation guide](docs/install-alm.md) to learn how to install the Altemista Asset Lifecycle Manager tool. 
+Follow the steps in the [installation guide](docs/install-aalm.md) to learn how to install the Altemista Asset Lifecycle Manager tool. 
 
 ## Components
 
