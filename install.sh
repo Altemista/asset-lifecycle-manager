@@ -6,8 +6,10 @@ set -u
 url=https://github.com/Altemista/asset-lifecycle-manager/releases/latest/download
 version=$(curl -fsSL https://api.github.com/repos/Altemista/asset-lifecycle-manager/releases/latest \
   | grep tag_name | cut -d : -f 2 | tr -d \",)
-olm_version=$(curl -fsSL https://api.github.com/repos/operator-framework/operator-lifecycle-manager/releases/latest \
-  | grep tag_name | cut -d : -f 2 | tr -d \",)
+#olm_version=$(curl -fsSL https://api.github.com/repos/operator-framework/operator-lifecycle-manager/releases/latest \
+#  | grep tag_name | cut -d : -f 2 | tr -d \",)
+
+olm_version="0.14.1"
 
 # THE DEFAULTS INITIALIZATION - OPTIONALS
 _arg_with_kubeapps="off"
