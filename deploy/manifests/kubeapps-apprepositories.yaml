@@ -8,10 +8,10 @@ metadata:
   annotations:
     "helm.sh/hook": post-install
   labels:
-    chart: kubeapps-3.9.2
+    chart: kubeapps-4.0.0
     release: kubeapps
     heritage: Tiller
-    helm.sh/chart: kubeapps-3.9.2
+    helm.sh/chart: kubeapps-4.0.0
     app.kubernetes.io/instance: kubeapps
     app.kubernetes.io/managed-by: Tiller
     app.kubernetes.io/name: kubeapps
@@ -32,10 +32,10 @@ metadata:
   annotations:
     "helm.sh/hook": post-install
   labels:
-    chart: kubeapps-3.9.2
+    chart: kubeapps-4.0.0
     release: kubeapps
     heritage: Tiller
-    helm.sh/chart: kubeapps-3.9.2
+    helm.sh/chart: kubeapps-4.0.0
     app.kubernetes.io/instance: kubeapps
     app.kubernetes.io/managed-by: Tiller
     app.kubernetes.io/name: kubeapps

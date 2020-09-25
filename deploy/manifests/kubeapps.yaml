@@ -5,10 +5,10 @@ kind: Service
 metadata:
   name: kubeapps-postgresql-headless
   labels:
-    app: postgresql
-    chart: postgresql-8.10.14
-    release: "kubeapps"
-    heritage: "Tiller"
+    app.kubernetes.io/name: postgresql
+    helm.sh/chart: postgresql-9.7.2
+    app.kubernetes.io/instance: kubeapps
+    app.kubernetes.io/managed-by: Tiller
 spec:
   type: ClusterIP
   clusterIP: None
@@ -17,8 +17,8 @@ spec:
       port: 5432
       targetPort: tcp-postgresql
   selector:
-    app: postgresql
-    release: "kubeapps"
+    app.kubernetes.io/name: postgresql
+    app.kubernetes.io/instance: kubeapps
 
 ---
 # Source: kubeapps/charts/postgresql/templates/statefulset.yaml
@@ -27,10 +27,10 @@ kind: StatefulSet
 metadata:
   name: kubeapps-postgresql-master
   labels:
-    app: postgresql
-    chart: postgresql-8.10.14
-    release: "kubeapps"
-    heritage: "Tiller"
+    app.kubernetes.io/name: postgresql
+    helm.sh/chart: postgresql-9.7.2
+    app.kubernetes.io/instance: kubeapps
+    app.kubernetes.io/managed-by: Tiller
   annotations:
 spec:
   serviceName: kubeapps-postgresql-headless
@@ -39,27 +39,30 @@ spec:
     type: RollingUpdate
   selector:
     matchLabels:
-      app: postgresql
-      release: "kubeapps"
+      app.kubernetes.io/name: postgresql
+      app.kubernetes.io/instance: kubeapps
       role: master
   template:
     metadata:
       name: kubeapps-postgresql
       labels:
-        app: postgresql
-        chart: postgresql-8.10.14
-        release: "kubeapps"
-        heritage: "Tiller"
+        app.kubernetes.io/name: postgresql
+        helm.sh/chart: postgresql-9.7.2
+        app.kubernetes.io/instance: kubeapps
+        app.kubernetes.io/managed-by: Tiller
         role: master
     spec:      
       containers:
         - name: kubeapps-postgresql
-          image: docker.io/bitnami/postgresql:11.8.0-debian-10-r57
+          image: docker.io/bitnami/postgresql:11.9.0-debian-10-r34
           imagePullPolicy: "IfNotPresent"
           resources:
             requests:
               cpu: 250m
               memory: 256Mi
+            
+          securityContext:
+            runAsUser: 1001
             
           env:
             - name: BITNAMI_DEBUG
@@ -92,6 +95,20 @@ spec:
               value: "assets"
             - name: POSTGRESQL_ENABLE_LDAP
               value: "no"
+            - name: POSTGRESQL_ENABLE_TLS
+              value: "no"
+            - name: POSTGRESQL_LOG_HOSTNAME
+              value: "false"
+            - name: POSTGRESQL_LOG_CONNECTIONS
+              value: "false"
+            - name: POSTGRESQL_LOG_DISCONNECTIONS
+              value: "false"
+            - name: POSTGRESQL_PGAUDIT_LOG_CATALOG
+              value: "off"
+            - name: POSTGRESQL_CLIENT_MIN_MESSAGES
+              value: "error"
+            - name: POSTGRESQL_SHARED_PRELOAD_LIBRARIES
+              value: "pgaudit"
           ports:
             - name: tcp-postgresql
               containerPort: 5432
@@ -100,7 +117,7 @@ spec:
               command:
                 - /bin/sh
                 - -c
-                - exec pg_isready -U "postgres" -d "assets" -h 127.0.0.1 -p 5432
+                - exec pg_isready -U "postgres" -d "dbname=assets" -h 127.0.0.1 -p 5432
             initialDelaySeconds: 30
             periodSeconds: 10
             timeoutSeconds: 5
@@ -113,7 +130,7 @@ spec:
                 - -c
                 - -e
                 - |
-                  exec pg_isready -U "postgres" -d "assets" -h 127.0.0.1 -p 5432
+                  exec pg_isready -U "postgres" -d "dbname=assets" -h 127.0.0.1 -p 5432
                   [ -f /opt/bitnami/postgresql/tmp/.initialized ] || [ -f /bitnami/postgresql/.initialized ]
             initialDelaySeconds: 5
             periodSeconds: 10
@@ -138,10 +155,10 @@ kind: Service
 metadata:
   name: kubeapps-postgresql-read
   labels:
-    app: postgresql
-    chart: postgresql-8.10.14
-    release: "kubeapps"
-    heritage: "Tiller"
+    app.kubernetes.io/name: postgresql
+    helm.sh/chart: postgresql-9.7.2
+    app.kubernetes.io/instance: kubeapps
+    app.kubernetes.io/managed-by: Tiller
   annotations:
 spec:
   type: ClusterIP
@@ -150,8 +167,8 @@ spec:
       port:  5432
       targetPort: tcp-postgresql
   selector:
-    app: postgresql
-    release: "kubeapps"
+    app.kubernetes.io/name: postgresql
+    app.kubernetes.io/instance: kubeapps
     role: slave
 
 ---
@@ -162,27 +179,27 @@ kind: StatefulSet
 metadata:
   name: "kubeapps-postgresql-slave"
   labels:
-    app: postgresql
-    chart: postgresql-8.10.14
-    release: "kubeapps"
-    heritage: "Tiller"
+    app.kubernetes.io/name: postgresql
+    helm.sh/chart: postgresql-9.7.2
+    app.kubernetes.io/instance: kubeapps
+    app.kubernetes.io/managed-by: Tiller
   annotations:
 spec:
   serviceName: kubeapps-postgresql-headless
   replicas: 1
   selector:
     matchLabels:
-      app: postgresql
-      release: "kubeapps"
+      app.kubernetes.io/name: postgresql
+      app.kubernetes.io/instance: kubeapps
       role: slave
   template:
     metadata:
       name: kubeapps-postgresql
       labels:
-        app: postgresql
-        chart: postgresql-8.10.14
-        release: "kubeapps"
-        heritage: "Tiller"
+        app.kubernetes.io/name: postgresql
+        helm.sh/chart: postgresql-9.7.2
+        app.kubernetes.io/instance: kubeapps
+        app.kubernetes.io/managed-by: Tiller
         role: slave
     spec:      
       initContainers:
@@ -192,12 +209,15 @@ spec:
         
       containers:
         - name: kubeapps-postgresql
-          image: docker.io/bitnami/postgresql:11.8.0-debian-10-r57
+          image: docker.io/bitnami/postgresql:11.9.0-debian-10-r34
           imagePullPolicy: "IfNotPresent"
           resources:
             requests:
               cpu: 250m
               memory: 256Mi
+            
+          securityContext:
+            runAsUser: 1001
             
           env:
             - name: BITNAMI_DEBUG
@@ -228,6 +248,20 @@ spec:
                 secretKeyRef:
                   name: kubeapps-db
                   key: postgresql-password
+            - name: POSTGRESQL_ENABLE_TLS
+              value: "no"
+            - name: POSTGRESQL_LOG_HOSTNAME
+              value: "false"
+            - name: POSTGRESQL_LOG_CONNECTIONS
+              value: "false"
+            - name: POSTGRESQL_LOG_DISCONNECTIONS
+              value: "false"
+            - name: POSTGRESQL_PGAUDIT_LOG_CATALOG
+              value: "off"
+            - name: POSTGRESQL_CLIENT_MIN_MESSAGES
+              value: "error"
+            - name: POSTGRESQL_SHARED_PRELOAD_LIBRARIES
+              value: "pgaudit"
           ports:
             - name: tcp-postgresql
               containerPort: 5432
@@ -236,7 +270,7 @@ spec:
               command:
                 - /bin/sh
                 - -c
-                - exec pg_isready -U "postgres" -d "assets" -h 127.0.0.1 -p 5432
+                - exec pg_isready -U "postgres" -d "dbname=assets" -h 127.0.0.1 -p 5432
             initialDelaySeconds: 30
             periodSeconds: 10
             timeoutSeconds: 5
@@ -249,7 +283,7 @@ spec:
                 - -c
                 - -e
                 - |
-                  exec pg_isready -U "postgres" -d "assets" -h 127.0.0.1 -p 5432
+                  exec pg_isready -U "postgres" -d "dbname=assets" -h 127.0.0.1 -p 5432
                   [ -f /opt/bitnami/postgresql/tmp/.initialized ] || [ -f /bitnami/postgresql/.initialized ]
             initialDelaySeconds: 5
             periodSeconds: 10
@@ -276,10 +310,10 @@ kind: Service
 metadata:
   name: kubeapps-postgresql
   labels:
-    app: postgresql
-    chart: postgresql-8.10.14
-    release: "kubeapps"
-    heritage: "Tiller"
+    app.kubernetes.io/name: postgresql
+    helm.sh/chart: postgresql-9.7.2
+    app.kubernetes.io/instance: kubeapps
+    app.kubernetes.io/managed-by: Tiller
   annotations:
 spec:
   type: ClusterIP
@@ -288,8 +322,8 @@ spec:
       port: 5432
       targetPort: tcp-postgresql
   selector:
-    app: postgresql
-    release: "kubeapps"
+    app.kubernetes.io/name: postgresql
+    app.kubernetes.io/instance: kubeapps
     role: master
 
 ---
@@ -302,10 +336,10 @@ kind: Role
 metadata:
   name: kubeapps-internal-apprepository-job-postupgrade
   labels:
-    chart: kubeapps-3.9.2
+    chart: kubeapps-4.0.0
     release: kubeapps
     heritage: Tiller
-    helm.sh/chart: kubeapps-3.9.2
+    helm.sh/chart: kubeapps-4.0.0
     app.kubernetes.io/instance: kubeapps
     app.kubernetes.io/managed-by: Tiller
     app.kubernetes.io/name: kubeapps
@@ -324,10 +358,10 @@ kind: RoleBinding
 metadata:
   name: kubeapps-internal-apprepository-job-postupgrade
   labels:
-    chart: kubeapps-3.9.2
+    chart: kubeapps-4.0.0
     release: kubeapps
     heritage: Tiller
-    helm.sh/chart: kubeapps-3.9.2
+    helm.sh/chart: kubeapps-4.0.0
     app.kubernetes.io/instance: kubeapps
     app.kubernetes.io/managed-by: Tiller
     app.kubernetes.io/name: kubeapps
@@ -347,10 +381,10 @@ kind: Deployment
 metadata:
   name: kubeapps-internal-dashboard
   labels:
-    chart: kubeapps-3.9.2
+    chart: kubeapps-4.0.0
     release: kubeapps
     heritage: Tiller
-    helm.sh/chart: kubeapps-3.9.2
+    helm.sh/chart: kubeapps-4.0.0
     app.kubernetes.io/instance: kubeapps
     app.kubernetes.io/managed-by: Tiller
     app.kubernetes.io/name: kubeapps
@@ -364,21 +398,21 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: d83cbf00214f9938e8d3e320b12745269c6e9e92d297068dd95312b3910f4cde
+        checksum/config: d65f0724769fed7c4e7782fbb95dce5e2be947f58794885ebd8fb2cb3631fc38
       labels:
         app: kubeapps-internal-dashboard
         app.kubernetes.io/name: kubeapps
         release: kubeapps
         app.kubernetes.io/instance: kubeapps
-        chart: kubeapps-3.9.2
-        helm.sh/chart: kubeapps-3.9.2
+        chart: kubeapps-4.0.0
+        helm.sh/chart: kubeapps-4.0.0
     spec:      
       securityContext:
         fsGroup: 
         runAsUser: 1001
       containers:
         - name: dashboard
-          image: docker.io/bitnami/kubeapps-dashboard:1.11.3-debian-10-r0
+          image: docker.io/bitnami/kubeapps-dashboard:2.0.0-debian-10-r0
           imagePullPolicy: "IfNotPresent"
           livenessProbe:
             httpGet:
@@ -432,15 +466,14 @@ kind: ServiceAccount
 metadata:
   name: kubeapps-internal-kubeops
   labels:
-    chart: kubeapps-3.9.2
+    chart: kubeapps-4.0.0
     release: kubeapps
     heritage: Tiller
-    helm.sh/chart: kubeapps-3.9.2
+    helm.sh/chart: kubeapps-4.0.0
     app.kubernetes.io/instance: kubeapps
     app.kubernetes.io/managed-by: Tiller
     app.kubernetes.io/name: kubeapps
     app: kubeapps-internal-kubeops
-    app.kubernetes.io/name: kubeapps
 
 ---
 # Source: kubeapps/templates/kubeapps-frontend-deployment.yaml
@@ -449,10 +482,10 @@ kind: Deployment
 metadata:
   name: kubeapps
   labels:
-    chart: kubeapps-3.9.2
+    chart: kubeapps-4.0.0
     release: kubeapps
     heritage: Tiller
-    helm.sh/chart: kubeapps-3.9.2
+    helm.sh/chart: kubeapps-4.0.0
     app.kubernetes.io/instance: kubeapps
     app.kubernetes.io/managed-by: Tiller
     app.kubernetes.io/name: kubeapps
@@ -466,7 +499,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 02f1e8be4c108914aa4b7ef1140bca5d98d867a26095e5436a4748b5a3086059
+        checksum/config: 1b8c845ea0d7f68388ffd2b07e862727505515cd32b8c4b6e7988381bb3c91bf
       labels:
         app: kubeapps
         app.kubernetes.io/name: kubeapps
@@ -478,7 +511,7 @@ spec:
         runAsUser: 1001
       containers:
         - name: nginx
-          image: docker.io/bitnami/nginx:1.19.2-debian-10-r1
+          image: docker.io/bitnami/nginx:1.19.2-debian-10-r32
           imagePullPolicy: "IfNotPresent"
           livenessProbe:
             httpGet:
@@ -514,6 +547,24 @@ spec:
             name: kubeapps-frontend-config
 
 ---
+# Source: kubeapps/templates/kubeops-config.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kubeapps-kubeops-config
+  labels:
+    app: kubeapps-kubeops-config
+    chart: kubeapps-4.0.0
+    release: kubeapps
+    heritage: Tiller
+data:
+  clusters.conf: |-
+    [
+      {
+        "name": "default"
+      }
+    ]
+---
 # Source: kubeapps/templates/db-secret-bootstrap.yaml
 apiVersion: v1
 kind: Secret
@@ -522,15 +573,15 @@ metadata:
   annotations:
     helm.sh/hook: pre-install
   labels:
-    chart: kubeapps-3.9.2
-    helm.sh/chart: kubeapps-3.9.2
+    chart: kubeapps-4.0.0
+    helm.sh/chart: kubeapps-4.0.0
     release: kubeapps
     app.kubernetes.io/instance: kubeapps
     heritage: Tiller
     app.kubernetes.io/managed-by: Tiller
 data:
-  postgresql-password: "ZWVyVVl4N0Z2bQ=="
-  postgresql-replication-password: "eExqQkZHdXBiMQ=="
+  postgresql-password: "aEpiSm9TNWxNTg=="
+  postgresql-replication-password: "TVJIVXdIUzcySg=="
 ---
 # Source: kubeapps/templates/apprepository-serviceaccount.yaml
 apiVersion: v1
@@ -538,10 +589,10 @@ kind: ServiceAccount
 metadata:
   name: kubeapps-internal-apprepository-controller
   labels:
-    chart: kubeapps-3.9.2
+    chart: kubeapps-4.0.0
     release: kubeapps
     heritage: Tiller
-    helm.sh/chart: kubeapps-3.9.2
+    helm.sh/chart: kubeapps-4.0.0
     app.kubernetes.io/instance: kubeapps
     app.kubernetes.io/managed-by: Tiller
     app.kubernetes.io/name: kubeapps
@@ -552,10 +603,10 @@ kind: ServiceAccount
 metadata:
   name: kubeapps-internal-apprepository-job-postupgrade
   labels:
-    chart: kubeapps-3.9.2
+    chart: kubeapps-4.0.0
     release: kubeapps
     heritage: Tiller
-    helm.sh/chart: kubeapps-3.9.2
+    helm.sh/chart: kubeapps-4.0.0
     app.kubernetes.io/instance: kubeapps
     app.kubernetes.io/managed-by: Tiller
     app.kubernetes.io/name: kubeapps
@@ -568,10 +619,10 @@ kind: ConfigMap
 metadata:
   name: kubeapps-internal-dashboard-config
   labels:
-    chart: kubeapps-3.9.2
+    chart: kubeapps-4.0.0
     release: kubeapps
     heritage: Tiller
-    helm.sh/chart: kubeapps-3.9.2
+    helm.sh/chart: kubeapps-4.0.0
     app.kubernetes.io/instance: kubeapps
     app.kubernetes.io/managed-by: Tiller
     app.kubernetes.io/name: kubeapps
@@ -580,6 +631,7 @@ data:
   vhost.conf: |-
     server {
       listen 8080;
+      large_client_header_buffers 4 32k;
       server_name _;
 
       gzip on;
@@ -610,12 +662,12 @@ data:
     {
       "kubeappsCluster": "default",
       "kubeappsNamespace": "altemistahub",
-      "appVersion": "v1.11.3",
+      "appVersion": "v2.0.0-beta.1",
       "authProxyEnabled": false,
       "oauthLoginURI": "/oauth2/start",
       "oauthLogoutURI": "/oauth2/sign_out",
-      "featureFlags": {"invalidateCache":true,"operators":false,"ui":"hex"},
-      "clusters": []
+      "featureFlags": {"invalidateCache":true},
+      "clusters": ["default"]
     }
 
 ---
@@ -626,10 +678,10 @@ metadata:
   name: kubeapps
   labels:
     app: kubeapps
-    chart: kubeapps-3.9.2
+    chart: kubeapps-4.0.0
     release: kubeapps
     heritage: Tiller
-    helm.sh/chart: kubeapps-3.9.2
+    helm.sh/chart: kubeapps-4.0.0
     app.kubernetes.io/instance: kubeapps
     app.kubernetes.io/managed-by: Tiller
     app.kubernetes.io/name: kubeapps
@@ -646,16 +698,17 @@ spec:
 
 ---
 # Source: kubeapps/templates/ingress.yaml
-apiVersion: extensions/v1beta1
+
+apiVersion: networking.k8s.io/v1beta1
 kind: Ingress
 metadata:
   name: kubeapps
   labels: 
     app: kubeapps
-    chart: kubeapps-3.9.2
+    chart: kubeapps-4.0.0
     release: kubeapps
     heritage: Tiller
-    helm.sh/chart: kubeapps-3.9.2
+    helm.sh/chart: kubeapps-4.0.0
     app.kubernetes.io/instance: kubeapps
     app.kubernetes.io/managed-by: Tiller
     app.kubernetes.io/name: kubeapps
@@ -688,10 +741,10 @@ kind: Role
 metadata:
   name: kubeapps-internal-apprepository-controller
   labels:
-    chart: kubeapps-3.9.2
+    chart: kubeapps-4.0.0
     release: kubeapps
     heritage: Tiller
-    helm.sh/chart: kubeapps-3.9.2
+    helm.sh/chart: kubeapps-4.0.0
     app.kubernetes.io/instance: kubeapps
     app.kubernetes.io/managed-by: Tiller
     app.kubernetes.io/name: kubeapps
@@ -736,10 +789,10 @@ kind: RoleBinding
 metadata:
   name: kubeapps-internal-apprepository-controller
   labels:
-    chart: kubeapps-3.9.2
+    chart: kubeapps-4.0.0
     release: kubeapps
     heritage: Tiller
-    helm.sh/chart: kubeapps-3.9.2
+    helm.sh/chart: kubeapps-4.0.0
     app.kubernetes.io/instance: kubeapps
     app.kubernetes.io/managed-by: Tiller
     app.kubernetes.io/name: kubeapps
@@ -794,10 +847,10 @@ kind: ClusterRole
 metadata:
   name: "kubeapps:altemistahub:apprepositories-read"
   labels:
-    chart: kubeapps-3.9.2
+    chart: kubeapps-4.0.0
     release: kubeapps
     heritage: Tiller
-    helm.sh/chart: kubeapps-3.9.2
+    helm.sh/chart: kubeapps-4.0.0
     app.kubernetes.io/instance: kubeapps
     app.kubernetes.io/managed-by: Tiller
     app.kubernetes.io/name: kubeapps
@@ -818,10 +871,10 @@ kind: ClusterRoleBinding
 metadata:
   name: "kubeapps:controller:altemistahub:apprepositories-read"
   labels:
-    chart: kubeapps-3.9.2
+    chart: kubeapps-4.0.0
     release: kubeapps
     heritage: Tiller
-    helm.sh/chart: kubeapps-3.9.2
+    helm.sh/chart: kubeapps-4.0.0
     app.kubernetes.io/instance: kubeapps
     app.kubernetes.io/managed-by: Tiller
     app.kubernetes.io/name: kubeapps
@@ -840,10 +893,10 @@ kind: ClusterRole
 metadata:
   name: "kubeapps:altemistahub:apprepositories-write"
   labels:
-    chart: kubeapps-3.9.2
+    chart: kubeapps-4.0.0
     release: kubeapps
     heritage: Tiller
-    helm.sh/chart: kubeapps-3.9.2
+    helm.sh/chart: kubeapps-4.0.0
     app.kubernetes.io/instance: kubeapps
     app.kubernetes.io/managed-by: Tiller
     app.kubernetes.io/name: kubeapps
@@ -868,10 +921,10 @@ kind: ConfigMap
 metadata:
   name: kubeapps-frontend-config
   labels:
-    chart: kubeapps-3.9.2
+    chart: kubeapps-4.0.0
     release: kubeapps
     heritage: Tiller
-    helm.sh/chart: kubeapps-3.9.2
+    helm.sh/chart: kubeapps-4.0.0
     app.kubernetes.io/instance: kubeapps
     app.kubernetes.io/managed-by: Tiller
     app.kubernetes.io/name: kubeapps
@@ -902,6 +955,7 @@ data:
 
     server {
       listen 8080;
+      large_client_header_buffers 4 32k;
       server_name _;
 
       location /healthz {
@@ -910,17 +964,15 @@ data:
         return 200 "healthy\n";
       }
 
-      # The default cluster running on the same cluster as Kubeapps.
+      # Ensure each cluster can be reached (should only be
+      # used with an auth-proxy where k8s credentials never leave
+      # the cluster). See clusters option.
       location ~* /api/clusters/default {
         rewrite /api/clusters/default/(.*) /$1 break;
         rewrite /api/clusters/default / break;
         proxy_pass https://kubernetes.default;
         include "./server_blocks/k8s-api-proxy.conf";
       }
-
-      # Ensure each additional cluster can be reached (should only be
-      # used with an auth-proxy where k8s credentials never leave
-      # the cluster). See clusters option.
 
       # TODO: The following location is left for backwards compat but will no longer
       # be needed once clients are sending the cluster name.
@@ -976,10 +1028,10 @@ metadata:
   annotations:
     "helm.sh/hook": crd-install
   labels:
-    chart: kubeapps-3.9.2
+    chart: kubeapps-4.0.0
     release: kubeapps
     heritage: Tiller
-    helm.sh/chart: kubeapps-3.9.2
+    helm.sh/chart: kubeapps-4.0.0
     app.kubernetes.io/instance: kubeapps
     app.kubernetes.io/managed-by: Tiller
     app.kubernetes.io/name: kubeapps
@@ -1000,10 +1052,10 @@ kind: Role
 metadata:
   name: kubeapps-internal-kubeops
   labels:
-    chart: kubeapps-3.9.2
+    chart: kubeapps-4.0.0
     release: kubeapps
     heritage: Tiller
-    helm.sh/chart: kubeapps-3.9.2
+    helm.sh/chart: kubeapps-4.0.0
     app.kubernetes.io/instance: kubeapps
     app.kubernetes.io/managed-by: Tiller
     app.kubernetes.io/name: kubeapps
@@ -1029,10 +1081,10 @@ kind: RoleBinding
 metadata:
   name: kubeapps-internal-kubeops
   labels:
-    chart: kubeapps-3.9.2
+    chart: kubeapps-4.0.0
     release: kubeapps
     heritage: Tiller
-    helm.sh/chart: kubeapps-3.9.2
+    helm.sh/chart: kubeapps-4.0.0
     app.kubernetes.io/instance: kubeapps
     app.kubernetes.io/managed-by: Tiller
     app.kubernetes.io/name: kubeapps
@@ -1051,10 +1103,10 @@ kind: ClusterRole
 metadata:
   name: "kubeapps:controller:kubeops-ns-discovery-altemistahub"
   labels:
-    chart: kubeapps-3.9.2
+    chart: kubeapps-4.0.0
     release: kubeapps
     heritage: Tiller
-    helm.sh/chart: kubeapps-3.9.2
+    helm.sh/chart: kubeapps-4.0.0
     app.kubernetes.io/instance: kubeapps
     app.kubernetes.io/managed-by: Tiller
     app.kubernetes.io/name: kubeapps
@@ -1072,10 +1124,10 @@ kind: ClusterRoleBinding
 metadata:
   name: "kubeapps:controller:kubeops-ns-discovery-altemistahub"
   labels:
-    chart: kubeapps-3.9.2
+    chart: kubeapps-4.0.0
     release: kubeapps
     heritage: Tiller
-    helm.sh/chart: kubeapps-3.9.2
+    helm.sh/chart: kubeapps-4.0.0
     app.kubernetes.io/instance: kubeapps
     app.kubernetes.io/managed-by: Tiller
     app.kubernetes.io/name: kubeapps
@@ -1084,6 +1136,49 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: "kubeapps:controller:kubeops-ns-discovery-altemistahub"
+subjects:
+  - kind: ServiceAccount
+    name: kubeapps-internal-kubeops
+    namespace: altemistahub
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: "kubeapps:controller:kubeops-operators-altemistahub"
+  labels:
+    chart: kubeapps-4.0.0
+    release: kubeapps
+    heritage: Tiller
+    helm.sh/chart: kubeapps-4.0.0
+    app.kubernetes.io/instance: kubeapps
+    app.kubernetes.io/managed-by: Tiller
+    app.kubernetes.io/name: kubeapps
+    app: kubeapps-internal-kubeops
+rules:
+  - apiGroups:
+      - packages.operators.coreos.com
+    resources:
+      - packagemanifests/icon
+    verbs:
+      - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: "kubeapps:controller:kubeops-operators-altemistahub"
+  labels:
+    chart: kubeapps-4.0.0
+    release: kubeapps
+    heritage: Tiller
+    helm.sh/chart: kubeapps-4.0.0
+    app.kubernetes.io/instance: kubeapps
+    app.kubernetes.io/managed-by: Tiller
+    app.kubernetes.io/name: kubeapps
+    app: kubeapps-internal-kubeops
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: "kubeapps:controller:kubeops-operators-altemistahub"
 subjects:
   - kind: ServiceAccount
     name: kubeapps-internal-kubeops
@@ -1097,10 +1192,10 @@ metadata:
   name: kubeapps-internal-dashboard
   labels:
     app: kubeapps
-    chart: kubeapps-3.9.2
+    chart: kubeapps-4.0.0
     release: kubeapps
     heritage: Tiller
-    helm.sh/chart: kubeapps-3.9.2
+    helm.sh/chart: kubeapps-4.0.0
     app.kubernetes.io/instance: kubeapps
     app.kubernetes.io/managed-by: Tiller
     app.kubernetes.io/name: kubeapps
@@ -1122,10 +1217,10 @@ kind: Deployment
 metadata:
   name: kubeapps-internal-assetsvc
   labels:
-    chart: kubeapps-3.9.2
+    chart: kubeapps-4.0.0
     release: kubeapps
     heritage: Tiller
-    helm.sh/chart: kubeapps-3.9.2
+    helm.sh/chart: kubeapps-4.0.0
     app.kubernetes.io/instance: kubeapps
     app.kubernetes.io/managed-by: Tiller
     app.kubernetes.io/name: kubeapps
@@ -1149,12 +1244,11 @@ spec:
         runAsUser: 1001
       containers:
         - name: assetsvc
-          image: docker.io/bitnami/kubeapps-assetsvc:1.11.3-scratch-r0
+          image: docker.io/bitnami/kubeapps-assetsvc:2.0.0-scratch-r0
           imagePullPolicy: "IfNotPresent"
           command:
             - /assetsvc
           args:
-            - --database-type=postgresql
             - --database-user=postgres
             - --database-name=assets
             - --database-url=kubeapps-postgresql-headless:5432
@@ -1193,10 +1287,10 @@ kind: Deployment
 metadata:
   name: kubeapps-internal-apprepository-controller
   labels:
-    chart: kubeapps-3.9.2
+    chart: kubeapps-4.0.0
     release: kubeapps
     heritage: Tiller
-    helm.sh/chart: kubeapps-3.9.2
+    helm.sh/chart: kubeapps-4.0.0
     app.kubernetes.io/instance: kubeapps
     app.kubernetes.io/managed-by: Tiller
     app.kubernetes.io/name: kubeapps
@@ -1221,21 +1315,21 @@ spec:
         runAsUser: 1001
       containers:
         - name: controller
-          image: docker.io/bitnami/kubeapps-apprepository-controller:1.11.3-scratch-r0
+          image: docker.io/bitnami/kubeapps-apprepository-controller:2.0.0-scratch-r0
           imagePullPolicy: "IfNotPresent"
           command:
             - /apprepository-controller
           args:
-            - --user-agent-comment=kubeapps/v1.11.3
-            - --repo-sync-image=docker.io/bitnami/kubeapps-asset-syncer:1.11.3-scratch-r0
+            - --user-agent-comment=kubeapps/v2.0.0-beta.1
+            - --repo-sync-image=docker.io/bitnami/kubeapps-asset-syncer:2.0.0-scratch-r0
             - --repo-sync-cmd=/asset-syncer
             - --namespace=altemistahub
             - --database-secret-name=kubeapps-db
             - --database-secret-key=postgresql-password
-            - --database-type=postgresql
             - --database-url=kubeapps-postgresql:5432
             - --database-user=postgres
             - --database-name=assets
+            - --crontab=*/1 * * * *
             - --repos-per-namespace
           resources:
             limits:
@@ -1253,10 +1347,10 @@ kind: Service
 metadata:
   name: kubeapps-internal-assetsvc
   labels:
-    chart: kubeapps-3.9.2
+    chart: kubeapps-4.0.0
     release: kubeapps
     heritage: Tiller
-    helm.sh/chart: kubeapps-3.9.2
+    helm.sh/chart: kubeapps-4.0.0
     app.kubernetes.io/instance: kubeapps
     app.kubernetes.io/managed-by: Tiller
     app.kubernetes.io/name: kubeapps
@@ -1285,10 +1379,10 @@ metadata:
     helm.sh/hook-weight: "0"
     helm.sh/hook-delete-policy: hook-succeeded
   labels:
-    chart: kubeapps-3.9.2
+    chart: kubeapps-4.0.0
     release: kubeapps
     heritage: Tiller
-    helm.sh/chart: kubeapps-3.9.2
+    helm.sh/chart: kubeapps-4.0.0
     app.kubernetes.io/instance: kubeapps
     app.kubernetes.io/managed-by: Tiller
     app.kubernetes.io/name: kubeapps
@@ -1309,13 +1403,12 @@ spec:
       serviceAccountName: kubeapps-internal-apprepository-job-postupgrade
       containers:
         - name: invalidate-cache
-          image: docker.io/bitnami/kubeapps-asset-syncer:1.11.3-scratch-r0
+          image: docker.io/bitnami/kubeapps-asset-syncer:2.0.0-scratch-r0
           imagePullPolicy: "IfNotPresent"
           command:
             - /asset-syncer
           args:
             - invalidate-cache
-            - --database-type=postgresql
             - --database-url=kubeapps-postgresql:5432
             - --database-user=postgres
             - --database-name=assets
@@ -1329,13 +1422,13 @@ spec:
         # Helm 3.1 supports a lookup template tag to create a secret if it does not exist
         # but we can't yet restrict to helm 3.1, hence manually doing this with an initContainer.
         - name: ensure-postgres-password
-          image: docker.io/bitnami/kubectl:1.16.14-debian-10-r0
+          image: docker.io/bitnami/kubectl:1.18.9-debian-10-r5
           imagePullPolicy: "IfNotPresent"
           command:
             - /bin/bash
           args:
             - -c
-            - 'kubectl -n altemistahub get secret kubeapps-db || kubectl -n altemistahub create secret generic kubeapps-db --from-literal=postgresql-password="9eNLqZz8Jw" --from-literal=postgresql-replication-password="zJVcnSb3yq"'
+            - 'kubectl -n altemistahub get secret kubeapps-db || kubectl -n altemistahub create secret generic kubeapps-db --from-literal=postgresql-password="jTvnwcP6Nw" --from-literal=postgresql-replication-password="l5jmjLWea8"'
 
 ---
 # Source: kubeapps/templates/kubeops-service.yaml
@@ -1345,10 +1438,10 @@ metadata:
   name: kubeapps-internal-kubeops
   labels:
     app: kubeapps
-    chart: kubeapps-3.9.2
+    chart: kubeapps-4.0.0
     release: kubeapps
     heritage: Tiller
-    helm.sh/chart: kubeapps-3.9.2
+    helm.sh/chart: kubeapps-4.0.0
     app.kubernetes.io/instance: kubeapps
     app.kubernetes.io/managed-by: Tiller
     app.kubernetes.io/name: kubeapps
@@ -1370,10 +1463,10 @@ kind: Deployment
 metadata:
   name: kubeapps-internal-kubeops
   labels:
-    chart: kubeapps-3.9.2
+    chart: kubeapps-4.0.0
     release: kubeapps
     heritage: Tiller
-    helm.sh/chart: kubeapps-3.9.2
+    helm.sh/chart: kubeapps-4.0.0
     app.kubernetes.io/instance: kubeapps
     app.kubernetes.io/managed-by: Tiller
     app.kubernetes.io/name: kubeapps
@@ -1401,13 +1494,19 @@ spec:
         runAsUser: 1001
       containers:
         - name: kubeops
-          image: docker.io/bitnami/kubeapps-kubeops:1.11.3-scratch-r0
+          image: docker.io/bitnami/kubeapps-kubeops:2.0.0-scratch-r0
           imagePullPolicy: "IfNotPresent"
           command:
             - /kubeops
           args:
-            - --user-agent-comment=kubeapps/v1.11.3
+            - --user-agent-comment=kubeapps/v2.0.0-beta.1
             - --assetsvc-url=http://kubeapps-internal-assetsvc:8080
+            - --clusters-config-path=/config/clusters.conf
+          volumeMounts:
+            - name: kubeops-config
+              mountPath: /config
+            - name: ca-certs
+              mountPath: /etc/additional-clusters-cafiles
           env:
             - name: POD_NAMESPACE
               valueFrom:
@@ -1438,4 +1537,10 @@ spec:
               cpu: 25m
               memory: 32Mi
             
+      volumes:
+        - name: kubeops-config
+          configMap:
+            name: kubeapps-kubeops-config
+        - name: ca-certs
+          emptyDir: {}
 

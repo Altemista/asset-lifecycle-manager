@@ -9,7 +9,7 @@ metadata:
 spec:
   containers:
     - name: kubeapps-assetsvc-test
-      image: docker.io/bitnami/nginx:1.19.2-debian-10-r1
+      image: docker.io/bitnami/nginx:1.19.2-debian-10-r32
       env:
         - name: ASSETSVC_HOST
           value: kubeapps-internal-assetsvc.altemistahub
@@ -23,7 +23,7 @@ spec:
         - |
             n=0
             until [ "$n" -ge 5 ]; do
-              if curl -o /tmp/output $ASSETSVC_HOST:$ASSETSVC_PORT/v1/ns/altemistahub/charts && cat /tmp/output && cat /tmp/output | grep wordpress; then
+              if curl -o /tmp/output $ASSETSVC_HOST:$ASSETSVC_PORT/v1/clusters/default/namespaces/altemistahub/charts && cat /tmp/output && cat /tmp/output | grep wordpress; then
                 break
               fi
               sleep 10
@@ -45,7 +45,7 @@ metadata:
 spec:
   containers:
     - name: kubeapps-dashboard-test
-      image: docker.io/bitnami/nginx:1.19.2-debian-10-r1
+      image: docker.io/bitnami/nginx:1.19.2-debian-10-r32
       env:
         - name: DASHBOARD_HOST
           value: kubeapps.altemistahub
