@@ -1,6 +1,7 @@
 useHelm3: true
 
 apprepository:
+  crontab: "*/1 * * * *"
   initialRepos:
   - name: altemista
     url: https://core.harbor.altemista.cloud/chartrepo/library
