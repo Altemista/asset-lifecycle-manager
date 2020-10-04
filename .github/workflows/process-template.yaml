@@ -26,7 +26,7 @@ jobs:
           run: helm repo add bitnami https://charts.bitnami.com/bitnami
 
         - name: Fetch and untar KubeApps Chart
-          run: helm fetch bitnami/kubeapps --untar
+          run: helm fetch bitnami/kubeapps --version 3.9.2 --untar
 
         - name: Process template with Altemista values
           run: helm template --name kubeapps -f deploy/templates/kubeapps-values.yaml kubeapps/ --namespace altemistahub --output-dir temp-process
