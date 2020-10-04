@@ -9,10 +9,10 @@ metadata:
     helm.sh/hook-delete-policy: hook-succeeded
     helm.sh/hook-weight: "-10"
   labels:
-    chart: kubeapps-4.0.0
+    chart: kubeapps-3.9.2
     release: kubeapps
     heritage: Tiller
-    helm.sh/chart: kubeapps-4.0.0
+    helm.sh/chart: kubeapps-3.9.2
     app.kubernetes.io/instance: kubeapps
     app.kubernetes.io/managed-by: Tiller
     app.kubernetes.io/name: kubeapps
@@ -34,10 +34,10 @@ metadata:
     helm.sh/hook-delete-policy: hook-succeeded
     helm.sh/hook-weight: "-10"
   labels:
-    chart: kubeapps-4.0.0
+    chart: kubeapps-3.9.2
     release: kubeapps
     heritage: Tiller
-    helm.sh/chart: kubeapps-4.0.0
+    helm.sh/chart: kubeapps-3.9.2
     app.kubernetes.io/instance: kubeapps
     app.kubernetes.io/managed-by: Tiller
     app.kubernetes.io/name: kubeapps
@@ -61,10 +61,10 @@ metadata:
     helm.sh/hook-delete-policy: hook-succeeded
     helm.sh/hook-weight: "-10"
   labels:
-    chart: kubeapps-4.0.0
+    chart: kubeapps-3.9.2
     release: kubeapps
     heritage: Tiller
-    helm.sh/chart: kubeapps-4.0.0
+    helm.sh/chart: kubeapps-3.9.2
     app.kubernetes.io/instance: kubeapps
     app.kubernetes.io/managed-by: Tiller
     app.kubernetes.io/name: kubeapps
@@ -80,10 +80,10 @@ metadata:
     helm.sh/hook: post-delete
     helm.sh/hook-delete-policy: hook-succeeded
   labels:
-    chart: kubeapps-4.0.0
+    chart: kubeapps-3.9.2
     release: kubeapps
     heritage: Tiller
-    helm.sh/chart: kubeapps-4.0.0
+    helm.sh/chart: kubeapps-3.9.2
     app.kubernetes.io/instance: kubeapps
     app.kubernetes.io/managed-by: Tiller
     app.kubernetes.io/name: kubeapps
@@ -104,13 +104,13 @@ spec:
       serviceAccountName: kubeapps-internal-db-secret-jobs-cleanup
       containers:
         - name: kubectl
-          image: docker.io/bitnami/kubectl:1.18.9-debian-10-r5
+          image: docker.io/bitnami/kubectl:1.16.14-debian-10-r0
           imagePullPolicy: "IfNotPresent"
           command:
             - /bin/sh
           args:
             - -c
-            - "kubectl delete secret -n altemistahub kubeapps-db|| true"
+            - "kubectl delete secret -n altemistahub kubeapps-mongodb kubeapps-db|| true"
 
 ---
 # Source: kubeapps/templates/apprepository-jobs-cleanup-rbac.yaml
@@ -123,10 +123,10 @@ metadata:
     helm.sh/hook-delete-policy: hook-succeeded
     helm.sh/hook-weight: "-10"
   labels:
-    chart: kubeapps-4.0.0
+    chart: kubeapps-3.9.2
     release: kubeapps
     heritage: Tiller
-    helm.sh/chart: kubeapps-4.0.0
+    helm.sh/chart: kubeapps-3.9.2
     app.kubernetes.io/instance: kubeapps
     app.kubernetes.io/managed-by: Tiller
     app.kubernetes.io/name: kubeapps
@@ -156,10 +156,10 @@ metadata:
     helm.sh/hook-delete-policy: hook-succeeded
     helm.sh/hook-weight: "-10"
   labels:
-    chart: kubeapps-4.0.0
+    chart: kubeapps-3.9.2
     release: kubeapps
     heritage: Tiller
-    helm.sh/chart: kubeapps-4.0.0
+    helm.sh/chart: kubeapps-3.9.2
     app.kubernetes.io/instance: kubeapps
     app.kubernetes.io/managed-by: Tiller
     app.kubernetes.io/name: kubeapps
@@ -183,10 +183,10 @@ metadata:
     helm.sh/hook: post-delete
     helm.sh/hook-delete-policy: hook-succeeded
   labels:
-    chart: kubeapps-4.0.0
+    chart: kubeapps-3.9.2
     release: kubeapps
     heritage: Tiller
-    helm.sh/chart: kubeapps-4.0.0
+    helm.sh/chart: kubeapps-3.9.2
     app.kubernetes.io/instance: kubeapps
     app.kubernetes.io/managed-by: Tiller
     app.kubernetes.io/name: kubeapps
@@ -207,7 +207,7 @@ spec:
       serviceAccountName: kubeapps-internal-apprepository-jobs-cleanup
       containers:
         - name: kubectl
-          image: docker.io/bitnami/kubectl:1.18.9-debian-10-r5
+          image: docker.io/bitnami/kubectl:1.16.14-debian-10-r0
           imagePullPolicy: "IfNotPresent"
           command:
             - /bin/sh
@@ -228,10 +228,10 @@ metadata:
     helm.sh/hook-delete-policy: hook-succeeded
     helm.sh/hook-weight: "-10"
   labels:
-    chart: kubeapps-4.0.0
+    chart: kubeapps-3.9.2
     release: kubeapps
     heritage: Tiller
-    helm.sh/chart: kubeapps-4.0.0
+    helm.sh/chart: kubeapps-3.9.2
     app.kubernetes.io/instance: kubeapps
     app.kubernetes.io/managed-by: Tiller
     app.kubernetes.io/name: kubeapps
